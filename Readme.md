@@ -104,3 +104,10 @@ Most of the code was created based on the following applications for creating ap
 
 * JRE(JDK) 1.8以上(Oracle JRE) (http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 * AndroidStudio 3.4.2 (https://developer.android.com/studio/index.html)
+
+## issue
+
+### domains lost
+
+Hi,I find when I use TunProxy send HTTPS traffic to a proxy such as Charles、Fiddler，they only shows IP but not domains.
+
