@@ -157,6 +157,7 @@ public class Tun2HttpVpnService extends VpnService {
                     Set<String> disallow = app.loadVPNApplication(MyApplication.VPNMode.DISALLOW);
                     Log.d(TAG, "disallowed:" + disallow.size());
                     builder.addDisallowedApplication(Arrays.asList(disallow.toArray(new String[0])));
+                    builder.addDisallowedApplication(getPackageName());
                 } else {
                     Set<String> allow = app.loadVPNApplication(MyApplication.VPNMode.ALLOW);
                     Log.d(TAG, "allowed:" + allow.size());

@@ -251,6 +251,9 @@ public class SimplePreferenceFragment extends PreferenceFragment
             this.mAllPackageInfoMap.putAll(installedPackageMap);
 
             for (final PackageInfo pi : installedPackages) {
+                if(pi.packageName.equals(MyApplication.getInstance().getPackageName())) {
+                    continue;
+                }
                 String t1 = pi.applicationInfo.loadLabel(pm).toString();
                 if (filter.trim().isEmpty() || t1.toLowerCase().contains(filter.toLowerCase())) {
                     final Preference preference = buildPackagePreferences(pm, pi);
