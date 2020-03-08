@@ -141,6 +141,9 @@ public class Tun2HttpVpnService extends VpnService {
         builder.addRoute("0.0.0.0", 0);
         builder.addRoute("0:0:0:0:0:0:0:0", 0);
 
+        builder.addDnsServer("1.1.1.1");
+        builder.addDnsServer("8.8.8.8");
+
         // MTU
         int mtu = jni_get_mtu();
         Log.i(TAG, "MTU=" + mtu);
@@ -291,6 +294,7 @@ public class Tun2HttpVpnService extends VpnService {
         private List<String> listAddress = new ArrayList<>();
         private List<String> listRoute = new ArrayList<>();
         private List<InetAddress> listDns = new ArrayList<>();
+        private List<String> listDnsAddresses = new ArrayList<>();
 
         private Builder() {
             super();
@@ -322,6 +326,13 @@ public class Tun2HttpVpnService extends VpnService {
         @Override
         public Builder addDnsServer(InetAddress address) {
             listDns.add(address);
+            super.addDnsServer(address);
+            return this;
+        }
+
+        @Override
+        public Builder addDnsServer(String address) {
+            listDnsAddresses.add(address);
             super.addDnsServer(address);
             return this;
         }
@@ -368,6 +379,9 @@ public class Tun2HttpVpnService extends VpnService {
             if (this.listDns.size() != other.listDns.size())
                 return false;
 
+            if (this.listDnsAddresses.size() != other.listDnsAddresses.size())
+                return false;
+
             for (String address : this.listAddress)
                 if (!other.listAddress.contains(address))
                     return false;
@@ -378,6 +392,10 @@ public class Tun2HttpVpnService extends VpnService {
 
             for (InetAddress dns : this.listDns)
                 if (!other.listDns.contains(dns))
+                    return false;
+
+            for (String dns : this.listDnsAddresses)
+                if (!other.listDnsAddresses.contains(dns))
                     return false;
 
             return true;
