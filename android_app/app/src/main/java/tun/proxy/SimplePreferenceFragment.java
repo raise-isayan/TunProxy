@@ -244,6 +244,9 @@ public class SimplePreferenceFragment extends PreferenceFragment
 
             final Map<String, Boolean> installedPackageMap = new HashMap<>();
             for (final PackageInfo pi : installedPackages) {
+                if (pi.packageName.equals(MyApplication.getInstance().getPackageName())) {
+                    continue;
+                }
                 boolean checked = this.mAllPackageInfoMap.containsKey(pi.packageName) ? this.mAllPackageInfoMap.get(pi.packageName) : false;
                 installedPackageMap.put(pi.packageName, checked);
             }

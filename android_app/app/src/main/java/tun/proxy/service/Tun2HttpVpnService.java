@@ -154,25 +154,53 @@ public class Tun2HttpVpnService extends VpnService {
         Log.i(TAG, "MTU=" + mtu);
         builder.setMtu(mtu);
 
-        // Add list of allowed applications
+        // Add list of allowed and disallowed applications
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            try {
-                MyApplication app = (MyApplication) this.getApplication();
-                if (app.loadVPNMode() == MyApplication.VPNMode.DISALLOW) {
-                    Set<String> disallow = app.loadVPNApplication(MyApplication.VPNMode.DISALLOW);
-                    Log.d(TAG, "disallowed:" + disallow.size());
-                    builder.addDisallowedApplication(Arrays.asList(disallow.toArray(new String[0])));
-                } else {
-                    Set<String> allow = app.loadVPNApplication(MyApplication.VPNMode.ALLOW);
-                    Log.d(TAG, "allowed:" + allow.size());
-                    builder.addAllowedApplication(Arrays.asList(allow.toArray(new String[0])));
+            MyApplication app = MyApplication.getInstance();
+            if (app.loadVPNMode() == MyApplication.VPNMode.DISALLOW) {
+                Set<String> disallow = app.loadVPNApplication(MyApplication.VPNMode.DISALLOW);
+                boolean disallowChanged = false;
+                for (String pkg : disallow) {
+                    try {
+                        builder.addDisallowedApplication(pkg);
+                    } catch (PackageManager.NameNotFoundException ignore) {
+                        //this package is deleted by user
+                        disallow.remove(pkg);
+                        disallowChanged = true;
+                    }
                 }
-            } catch (PackageManager.NameNotFoundException e) {
-                Log.e(TAG, e.getMessage(), e);
+                Log.d(TAG, "disallowed:" + disallow.size());
+                if (disallowChanged) {
+                    MyApplication.getInstance().storeVPNApplication(MyApplication.VPNMode.DISALLOW, disallow);
+                    //these deleted packages are removed from the registry now
+                }
+                try {
+                    builder.addDisallowedApplication(getPackageName());
+                } catch (PackageManager.NameNotFoundException ex) {
+                    Log.d(TAG, "Unexpected error: TunProxy package cannot be found");
+                }
+            } else {
+                Set<String> allow = app.loadVPNApplication(MyApplication.VPNMode.ALLOW);
+                boolean allowChanged = false;
+                for (String pkg : allow) {
+                    if (pkg.equals(getPackageName())) {
+                        continue;
+                    }
+                    try {
+                        builder.addAllowedApplication(pkg);
+                    } catch (PackageManager.NameNotFoundException ignore) {
+                        //this package is deleted by user
+                        allow.remove(pkg);
+                        allowChanged = true;
+                    }
+                }
+                Log.d(TAG, "allowed:" + allow.size());
+                if (allowChanged) {
+                    MyApplication.getInstance().storeVPNApplication(MyApplication.VPNMode.ALLOW, allow);
+                    //these deleted packages are removed from the registry now
+                }
             }
         }
-
-        // Add list of allowed applications
         return builder;
     }
 
