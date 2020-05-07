@@ -279,9 +279,10 @@ void check_tcp_socket(const struct arguments *args,
                             s->tcp.state = TCP_SYN_RECV;
                         } else {
                             write_rst(args, &s->tcp);
-                        }                        if (strcmp(buffer, "HTTP/1.0 200") == 0 || strcmp(buffer, "HTTP/1.1 200") == 0) {
-
                         }
+                    if (strcmp(buffer, "HTTP/1.0 200") == 0 || strcmp(buffer, "HTTP/1.1 200") == 0) {
+
+                    }
                 }
             } else {
                 s->tcp.remote_seq++; // remote SYN
@@ -730,7 +731,7 @@ jboolean handle_tcp(const struct arguments *args,
                 }
             }
             if (cur->tcp.connect_sent == TCP_CONNECT_NOT_SENT) {
-                if (len > 0) {
+                if (len > 0 && datalen > 0) {
                     char buffer[512];
                     sprintf(buffer, "CONNECT %s:443 HTTP/1.0\r\n\r\n", cur->tcp.hostname);
 
