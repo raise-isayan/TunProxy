@@ -274,14 +274,13 @@ void check_tcp_socket(const struct arguments *args,
                 } else {
                     if (s->tcp.connect_sent == TCP_CONNECT_SENT) {
                         buffer[bytes] = '\0';
+                        if (strcmp(buffer, "HTTP/1.0 200") == 0 || strcmp(buffer, "HTTP/1.1 200") == 0) {
                             s->tcp.connect_sent = TCP_CONNECT_ESTABLISHED;
                             while (recv(s->socket, buffer, sizeof(buffer), 0) > 0) {}
                             s->tcp.state = TCP_SYN_RECV;
                         } else {
                             write_rst(args, &s->tcp);
                         }
-                    if (strcmp(buffer, "HTTP/1.0 200") == 0 || strcmp(buffer, "HTTP/1.1 200") == 0) {
-
                     }
                 }
             } else {
