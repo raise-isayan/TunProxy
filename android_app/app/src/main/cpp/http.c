@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h> /* malloc() */
 #include <string.h> /* strncpy() */
@@ -23,7 +22,6 @@ static const char http_503[] =
  *
  * Returns:
  *  >=0  - length of the hostname and updates *hostname
- *         caller is responsible for freeing *hostname
  *  -1   - Incomplete request
  *  -2   - No Host header included in this request
  *  -3   - Invalid hostname pointer
@@ -88,126 +86,169 @@ int next_header(const char **data, size_t *len) {
     return header_len;
 }
 
-uint8_t *find_data(uint8_t *data, size_t data_len, char *value) {
+uint8_t *find_data(uint8_t *data, size_t data_len, const char *value) {
+    if (!data || !value || data_len == 0)
+        return NULL;
 
     int found = 0;
     int value_length = strlen(value);
+    
+    // Make sure value is not longer than data
+    if (value_length > data_len)
+        return NULL;
 
-    while (!found && data_len > 2) {
-        while (data[0] != value[0] && data_len > 2) {
-            data++;
-            data_len--;
-        }
-        if (strncasecmp(value, data, value_length) == 0) {
+    size_t pos = 0;
+    while (!found && pos + value_length <= data_len) {
+        if (strncasecmp((char *)&data[pos], value, value_length) == 0) {
             found = 1;
-        } else {
-            data++;
-            data_len--;
+            return &data[pos];
         }
-    }
-    if (found) {
-        return data;
+        pos++;
     }
 
-    return 0;
+    return NULL;
 }
 
-uint_t patch_buffer[2*MTU];
+// Static buffer for HTTP patching with safe size (avoid global array overflows)
+// Using 2*MTU ensures we have enough space for the original request plus any additions
+static uint8_t patch_buffer[2*MTU];
 
 uint8_t *patch_http_url(uint8_t *data, size_t *data_len) {
-    __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "patch_http_url start");
+    if (!data || !data_len || *data_len == 0 || *data_len > MTU) {
+        LOG("patch_http_url: Invalid input data");
+        return NULL;
+    }
 
-    char hostname[1024];
-    uint8_t *host = find_data(data, *data_len, "Host: ");
-    size_t length = 0;
-    if (host) {
-        host += 6;
-        while (*host != '\r' && length < 511) {
-            hostname[length] = *host;
-            host++;
-            length++;
+    __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "patch_http_url start (data length: %zu)", *data_len);
+
+    // Extract hostname from Host header
+    char hostname[512] = {0};
+    uint8_t *host_header = find_data(data, *data_len, "Host: ");
+    if (!host_header) {
+        LOG("patch_http_url: No Host header found");
+        return NULL;
+    }
+    
+    // Extract hostname from header (skip "Host: " and stop at CR or space)
+    host_header += 6; // Skip "Host: "
+    size_t hostname_len = 0;
+    size_t max_offset = *data_len - (host_header - data);
+    
+    while (hostname_len < sizeof(hostname) - 1 && 
+           hostname_len < max_offset && 
+           host_header[hostname_len] != '\r' && 
+           host_header[hostname_len] != '\n' &&
+           host_header[hostname_len] != ' ') {
+        hostname[hostname_len] = host_header[hostname_len];
+        hostname_len++;
+    }
+    hostname[hostname_len] = '\0';
+    
+    if (hostname_len == 0) {
+        LOG("patch_http_url: Empty hostname");
+        return NULL;
+    }
+    
+    __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "patch_http_url: Found hostname: %s", hostname);
+
+    // Find HTTP method
+    const char *http_methods[] = {
+        "GET ", "POST ", "PUT ", "DELETE ", "HEAD ", "OPTIONS ", 
+        "PATCH ", "TRACE ", "CONNECT ", "PROPFIND ", "PROPPATCH ", 
+        "MKCOL ", "COPY ", "MOVE ", "LOCK ", "UNLOCK ", "LINK ", "UNLINK "
+    };
+    
+    uint8_t *method_pos = NULL;
+    const char *method_str = NULL;
+    size_t method_len = 0;
+    
+    for (size_t i = 0; i < sizeof(http_methods) / sizeof(http_methods[0]); i++) {
+        uint8_t *pos = find_data(data, *data_len, http_methods[i]);
+        if (pos) {
+            method_pos = pos;
+            method_str = http_methods[i];
+            method_len = strlen(method_str);
+            break;
         }
+    }
+    
+    if (!method_pos) {
+        LOG("patch_http_url: No HTTP method found");
+        return NULL;
+    }
+    
+    __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "patch_http_url: Found method: %s", method_str);
+    
+    // Find the URL part (after the method)
+    size_t url_offset = method_pos - data + method_len;
+    if (url_offset >= *data_len) {
+        LOG("patch_http_url: URL parsing error");
+        return NULL;
+    }
+    
+    // Check if URL already starts with http://
+    if (*data_len > url_offset + 7 && 
+        strncasecmp((char*)&data[url_offset], "http://", 7) == 0) {
+        LOG("patch_http_url: URL already has http://");
+        return NULL;
+    }
+    
+    // Check if URL already starts with https://
+    if (*data_len > url_offset + 8 && 
+        strncasecmp((char*)&data[url_offset], "https://", 8) == 0) {
+        LOG("patch_http_url: URL already has https://");
+        return NULL;
+    }
+    
+    // Check if URL is a relative path (starts with / or ./)
+    bool is_relative = (*data_len > url_offset && 
+                       (data[url_offset] == '/' || 
+                        (data[url_offset] == '.' && *data_len > url_offset + 1 && data[url_offset + 1] == '/')));
+    
+    // Calculate new data length and ensure it fits in our buffer
+    size_t http_prefix_len = 7; // "http://"
+    size_t new_data_len = 0;
+    
+    if (is_relative) {
+        // For relative URLs, we need: [beginning][http://hostname][relative_path][rest]
+        new_data_len = url_offset + http_prefix_len + hostname_len + (*data_len - url_offset);
     } else {
-        LOG("patch_http_url no host");
-        return 0;
+        // For absolute URLs, we need: [beginning][http://hostname/][absolute_path][rest]
+        new_data_len = url_offset + http_prefix_len + hostname_len + 1 + (*data_len - url_offset);
     }
-
-    __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "patch_http_url find word");
-
-    //GET POST PUT DELETE HEAD OPTIONS PATCH
-    char *word;
-    uint8_t *pos = 0;
-    if ((pos = find_data(data, *data_len, "GET ")) > 0) {
-        word = "GET ";
-    } else if ((pos = find_data(data, *data_len, "POST ")) > 0) {
-        word = "POST ";
-    } else if ((pos = find_data(data, *data_len, "PUT ")) > 0) {
-        word = "PUT ";
-    } else if ((pos = find_data(data, *data_len, "DELETE ")) > 0) {
-        word = "DELETE ";
-    } else if ((pos = find_data(data, *data_len, "HEAD ")) > 0) {
-        word = "HEAD ";
-    } else if ((pos = find_data(data, *data_len, "OPTIONS ")) > 0) {
-        word = "OPTIONS ";
-    } else if ((pos = find_data(data, *data_len, "PATCH ")) > 0) {
-        word = "PATCH ";
-    } else if ((pos = find_data(data, *data_len, "HEAD ")) > 0) {
-        word = "HEAD ";
-    } else if ((pos = find_data(data, *data_len, "TRACE ")) > 0) {
-        word = "TRACE ";
-    } else if ((pos = find_data(data, *data_len, "PROPFIND ")) > 0) {
-        word = "PROPFIND ";
-    } else if ((pos = find_data(data, *data_len, "PROPPATCH ")) > 0) {
-        word = "PROPPATCH ";
-    } else if ((pos = find_data(data, *data_len, "MKCOL ")) > 0) {
-        word = "MKCOL ";
-    } else if ((pos = find_data(data, *data_len, "COPY ")) > 0) {
-        word = "COPY ";
-    } else if ((pos = find_data(data, *data_len, "MOVE ")) > 0) {
-        word = "MOVE ";
-    } else if ((pos = find_data(data, *data_len, "LOCK ")) > 0) {
-        word = "LOCK ";
-    } else if ((pos = find_data(data, *data_len, "UNLOCK ")) > 0) {
-        word = "UNLOCK ";
-    } else if ((pos = find_data(data, *data_len, "LINK ")) > 0) {
-        word = "LINK ";
-    } else if ((pos = find_data(data, *data_len, "UNLINK "))> 0) {
-        word = "UNLINK ";
+    
+    if (new_data_len > sizeof(patch_buffer)) {
+        LOG("patch_http_url: New data too large for buffer");
+        return NULL;
     }
-
-    if (!pos) {
-        LOG("patch_http_url no word");
-        return 0;
+    
+    // Create the patched request
+    uint8_t *new_data = patch_buffer;
+    
+    // Copy everything up to the URL
+    memcpy(new_data, data, url_offset);
+    
+    // Add http:// and hostname
+    memcpy(new_data + url_offset, "http://", http_prefix_len);
+    memcpy(new_data + url_offset + http_prefix_len, hostname, hostname_len);
+    
+    // Handle relative vs absolute URL
+    if (is_relative) {
+        // For relative URLs, just append the URL as-is
+        memcpy(new_data + url_offset + http_prefix_len + hostname_len, 
+               data + url_offset, *data_len - url_offset);
+    } else {
+        // For absolute URLs, add a slash after hostname
+        new_data[url_offset + http_prefix_len + hostname_len] = '/';
+        
+        // Then add the absolute URL
+        memcpy(new_data + url_offset + http_prefix_len + hostname_len + 1, 
+               data + url_offset, *data_len - url_offset);
     }
-
-
-    size_t http_len = strlen("http://");
-    size_t word_len = strlen(word);
-    size_t pos1 = pos - data + word_len;
-
-    LOG("patch_http_url word found");
-
-    if (data[pos1] == 'h' &&
-        data[pos1 + 1] == 't' &&
-        data[pos1 + 2] == 't' &&
-        data[pos1 + 3] == 'p' &&
-        data[pos1 + 4] == ':') {
-
-        LOG("patch_http_url already patched");
-        return 0;
-    }
-
-    uint8_t *new_data = &patch_buffer[0];
-    LOG("patch_http_url start patch");
-    memcpy(new_data, data, pos1);
-
-    memcpy(new_data + pos1, "http://", http_len);
-    memcpy(new_data + pos1 + http_len, hostname, length);
-    memcpy(new_data + pos1 + http_len + length, data + pos1, *data_len - pos1);
-
-    *data_len += http_len + length;
-
-    LOG("patch_http_url end patch");
-
+    
+    // Update data length
+    *data_len = new_data_len;
+    
+    __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "patch_http_url: Successfully patched URL");
     return new_data;
 };

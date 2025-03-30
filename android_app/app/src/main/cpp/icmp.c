@@ -1,4 +1,3 @@
-
 #include "tun2http.h"
 
 extern struct ng_session *ng_session;
@@ -7,7 +6,9 @@ extern FILE *pcap_file;
 int get_icmp_timeout(const struct icmp_session *u, int sessions, int maxsessions) {
     int timeout = ICMP_TIMEOUT;
 
+    // Scale timeout based on network load, but ensure a minimum timeout
     int scale = 100 - sessions * 100 / maxsessions;
+    scale = (scale < 30) ? 30 : scale; // Ensure at least 30% of timeout
     timeout = timeout * scale / 100;
 
     return timeout;
@@ -32,10 +33,12 @@ int check_icmp_session(const struct arguments *args, struct ng_session *s,
         log_android(ANDROID_LOG_WARN, "ICMP idle %d/%d sec stop %d from %s to %s",
                     now - s->icmp.time, timeout, s->icmp.stop, dest, source);
 
-        if (close(s->socket))
-            log_android(ANDROID_LOG_ERROR, "ICMP close %d error %d: %s",
-                        s->socket, errno, strerror(errno));
-        s->socket = -1;
+        if (s->socket >= 0) {
+            if (close(s->socket))
+                log_android(ANDROID_LOG_ERROR, "ICMP close %d error %d: %s",
+                            s->socket, errno, strerror(errno));
+            s->socket = -1;
+        }
 
         return 1;
     }
@@ -151,9 +154,24 @@ jboolean handle_icmp(const struct arguments *args,
         inet_ntop(AF_INET6, &ip6->ip6_dst, dest, sizeof(dest));
     }
 
-    if (icmp->icmp_type != ICMP_ECHO) {
-        log_android(ANDROID_LOG_WARN, "ICMP type %d code %d from %s to %s not supported",
-                    icmp->icmp_type, icmp->icmp_code, source, dest);
+    // Improved handling for different ICMP types
+    uint8_t icmp_type = icmp->icmp_type;
+    uint8_t icmp_code = icmp->icmp_code;
+    
+    // Log ICMP type/code for debugging
+    log_android(ANDROID_LOG_DEBUG, "ICMP type %d code %d from %s to %s",
+                icmp_type, icmp_code, source, dest);
+    
+    // Currently, we only handle Echo Requests (ping)
+    // We could add support for other types in the future
+    if (version == 4 && icmp_type != ICMP_ECHO) {
+        log_android(ANDROID_LOG_WARN, "ICMP v4 type %d code %d from %s to %s not supported",
+                    icmp_type, icmp_code, source, dest);
+        return 0;
+    }
+    else if (version == 6 && icmp_type != ICMP6_ECHO_REQUEST) {
+        log_android(ANDROID_LOG_WARN, "ICMP v6 type %d code %d from %s to %s not supported",
+                    icmp_type, icmp_code, source, dest);
         return 0;
     }
 
@@ -194,69 +212,77 @@ jboolean handle_icmp(const struct arguments *args,
         s->icmp.stop = 0;
         s->next = NULL;
 
-        // Open UDP socket
+        // Open ICMP socket
         s->socket = open_icmp_socket(args, &s->icmp);
         if (s->socket < 0) {
             free(s);
             return 0;
         }
 
-        log_android(ANDROID_LOG_DEBUG, "ICMP socket %d id %x", s->socket, s->icmp.id);
-
-        // Monitor events
-        memset(&s->ev, 0, sizeof(struct epoll_event));
         s->ev.events = EPOLLIN | EPOLLERR;
         s->ev.data.ptr = s;
-        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, s->socket, &s->ev))
-            log_android(ANDROID_LOG_ERROR, "epoll add icmp error %d: %s", errno, strerror(errno));
-
-        s->next = ng_session;
-        ng_session = s;
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, s->socket, &s->ev)) {
+            log_android(ANDROID_LOG_ERROR, "epoll add icmp error %d: %s",
+                        errno, strerror(errno));
+            if (close(s->socket))
+                log_android(ANDROID_LOG_ERROR, "ICMP close %d error %d: %s",
+                            s->socket, errno, strerror(errno));
+            free(s);
+            return 0;
+        }
 
         cur = s;
+        s->next = ng_session;
+        ng_session = s;
     }
 
-    // Modify ID
-    // http://lwn.net/Articles/443051/
-    icmp->icmp_id = ~icmp->icmp_id;
+    // Forward to socket
+    cur->icmp.time = time(NULL);
+
+    // ICMP header
+    uint16_t icmpid = icmp->icmp_id;
+    uint16_t icmpseq = icmp->icmp_seq;
+    
+    // Set the proper ID based on session
+    icmp->icmp_id = cur->icmp.id;
+
+    // Fix checksum
     uint16_t csum = 0;
-    if (version == 6) {
-        // Untested
+    if (cur->icmp.version == 6) {
         struct ip6_hdr_pseudo pseudo;
         memset(&pseudo, 0, sizeof(struct ip6_hdr_pseudo));
-        memcpy(&pseudo.ip6ph_src, &ip6->ip6_dst, 16);
-        memcpy(&pseudo.ip6ph_dst, &ip6->ip6_src, 16);
-        pseudo.ip6ph_len = ip6->ip6_ctlun.ip6_un1.ip6_un1_plen;
-        pseudo.ip6ph_nxt = ip6->ip6_ctlun.ip6_un1.ip6_un1_nxt;
+        memcpy(&pseudo.ip6ph_src, &cur->icmp.saddr.ip6, 16);
+        memcpy(&pseudo.ip6ph_dst, &cur->icmp.daddr.ip6, 16);
+        pseudo.ip6ph_len = htons(icmplen);
+        pseudo.ip6ph_nxt = IPPROTO_ICMPV6;
         csum = calc_checksum(0, (uint8_t *) &pseudo, sizeof(struct ip6_hdr_pseudo));
     }
     icmp->icmp_cksum = 0;
     icmp->icmp_cksum = ~calc_checksum(csum, (uint8_t *) icmp, icmplen);
 
-    log_android(ANDROID_LOG_INFO,
-                "ICMP forward from tun %s to %s type %d code %d id %x seq %d data %d",
-                source, dest,
-                icmp->icmp_type, icmp->icmp_code, icmp->icmp_id, icmp->icmp_seq, icmplen);
-
-    cur->icmp.time = time(NULL);
-
+    // Send ICMP to socket
     struct sockaddr_in server4;
     struct sockaddr_in6 server6;
-    if (version == 4) {
+    if (cur->icmp.version == 4) {
         server4.sin_family = AF_INET;
-        server4.sin_addr.s_addr = (__be32) ip4->daddr;
+        server4.sin_addr.s_addr = (__be32) cur->icmp.daddr.ip4;
         server4.sin_port = 0;
     }
     else {
         server6.sin6_family = AF_INET6;
-        memcpy(&server6.sin6_addr, &ip6->ip6_dst, 16);
+        memcpy(&server6.sin6_addr, &cur->icmp.daddr.ip6, 16);
         server6.sin6_port = 0;
     }
 
-    // Send raw ICMP message
-    if (sendto(cur->socket, icmp, (socklen_t) icmplen, MSG_NOSIGNAL,
-               (const struct sockaddr *) (version == 4 ? &server4 : &server6),
-               (socklen_t) (version == 4 ? sizeof(server4) : sizeof(server6))) != icmplen) {
+    log_android(ANDROID_LOG_INFO, "ICMP sending to socket type %d code %d id %x seq %d",
+               icmp_type, icmp_code, icmpid, icmpseq);
+
+    ssize_t sent = sendto(cur->socket, icmp, (size_t) icmplen, MSG_NOSIGNAL,
+                          (const struct sockaddr *) (version == 4 ? &server4 : &server6),
+                          (socklen_t) (version == 4
+                                       ? sizeof(struct sockaddr_in)
+                                       : sizeof(struct sockaddr_in6)));
+    if (sent != icmplen) {
         log_android(ANDROID_LOG_ERROR, "ICMP sendto error %d: %s", errno, strerror(errno));
         if (errno != EINTR && errno != EAGAIN) {
             cur->icmp.stop = 1;
