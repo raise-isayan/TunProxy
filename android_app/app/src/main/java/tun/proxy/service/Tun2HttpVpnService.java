@@ -12,6 +12,7 @@ import android.os.Parcel;
 import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
 import android.os.RemoteException;
+import androidx.core.app.ServiceCompat;
 import androidx.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -100,7 +101,7 @@ public class Tun2HttpVpnService extends VpnService {
             stopVPN(vpn);
             vpn = null;
         }
-        stopForeground(true);
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
     }
 
     @Override

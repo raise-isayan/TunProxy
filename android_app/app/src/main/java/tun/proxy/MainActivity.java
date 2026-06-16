@@ -13,10 +13,9 @@ import android.content.pm.PackageManager;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.fragment.app.Fragment;
-import androidx.preference.Preference;
-import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 
 import android.os.Handler;
 import android.os.IBinder;
@@ -31,10 +30,7 @@ import android.widget.EditText;
 import tun.proxy.service.Tun2HttpVpnService;
 import tun.utils.IPUtil;
 
-public class MainActivity extends AppCompatActivity implements
-        PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
-    public static final int REQUEST_VPN = 1;
-    public static final int REQUEST_CERT = 2;
+public class MainActivity extends AppCompatActivity {
 
     Button start;
     Button stop;
@@ -42,6 +38,15 @@ public class MainActivity extends AppCompatActivity implements
     Handler statusHandler = new Handler(Looper.getMainLooper());
 
     private Tun2HttpVpnService service;
+
+    private final ActivityResultLauncher<Intent> vpnRequestLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    vpnPrepared();
+                }
+            }
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,20 +77,6 @@ public class MainActivity extends AppCompatActivity implements
         loadHostPort();
 
     }
-    @Override
-    public boolean onPreferenceStartFragment(PreferenceFragmentCompat caller, Preference pref) {
-        final Bundle args = pref.getExtras();
-        final Fragment fragment = getSupportFragmentManager().getFragmentFactory().instantiate(getClassLoader(), pref.getFragment());
-        fragment.setArguments(args);
-        fragment.setTargetFragment(caller, 0);
-        getSupportFragmentManager().beginTransaction()
-            .replace(R.id.activity_settings, fragment)
-            .addToBackStack(null)
-            .commit();
-        setTitle(pref.getTitle());
-        return true;
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -199,19 +190,14 @@ public class MainActivity extends AppCompatActivity implements
     private void startVpn() {
         Intent i = VpnService.prepare(this);
         if (i != null) {
-            startActivityForResult(i, REQUEST_VPN);
+            vpnRequestLauncher.launch(i);
         } else {
-            onActivityResult(REQUEST_VPN, RESULT_OK, null);
+            vpnPrepared();
         }
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode != RESULT_OK) {
-            return;
-        }
-        if (requestCode == REQUEST_VPN && parseAndSaveHostPort()) {
+    private void vpnPrepared() {
+        if (parseAndSaveHostPort()) {
             start.setEnabled(false);
             stop.setEnabled(true);
             Tun2HttpVpnService.start(this);

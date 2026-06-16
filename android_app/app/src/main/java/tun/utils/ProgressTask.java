@@ -60,14 +60,17 @@ public abstract class ProgressTask<Params, Progress, Result> {
         }
     }
 
-    public void execute(Params... params) {
-        ExecutorService executorService  = Executors.newSingleThreadExecutor();
-        executorService.submit(new ProgressRunnable(params));
+    @SafeVarargs
+    public final void execute(Params... params) {
+        try (ExecutorService executorService  = Executors.newSingleThreadExecutor()) {
+            executorService.submit(new ProgressRunnable(params));
+        }
     }
 
     protected void onPreExecute() {
     }
 
+    @SuppressWarnings("unchecked")
     protected abstract Result doInBackground(Params... params);
 
     protected void onPostExecute(Result result) {

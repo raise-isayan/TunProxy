@@ -11,16 +11,22 @@ import android.content.pm.PackageManager;
 //import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.MenuProvider;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.Lifecycle;
 import androidx.preference.*;
 
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.*;
 
 import java.util.Collections;
@@ -34,7 +40,8 @@ import java.util.Set;
 
 import tun.utils.ProgressTask;
 
-public class SettingsActivity extends AppCompatActivity {
+public class SettingsActivity extends AppCompatActivity implements
+        PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
     private static final String TAG = "SettingsActivity";
     private static final String TITLE_TAG = "Settings";
 
@@ -100,6 +107,19 @@ public class SettingsActivity extends AppCompatActivity {
         return super.onSupportNavigateUp();
     }
 
+    @Override
+    public boolean onPreferenceStartFragment(PreferenceFragmentCompat caller, Preference pref) {
+        final Bundle args = pref.getExtras();
+        final Fragment fragment = getSupportFragmentManager().getFragmentFactory().instantiate(getClassLoader(), pref.getFragment());
+        fragment.setArguments(args);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.activity_settings, fragment)
+                .addToBackStack(null)
+                .commit();
+        setTitle(pref.getTitle());
+        return true;
+    }
+
     /**
      * Inner Classes.
      */
@@ -113,7 +133,6 @@ public class SettingsActivity extends AppCompatActivity {
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             addPreferencesFromResource(R.xml.preferences);
-            setHasOptionsMenu(true);
 
             /* Allowed / Disallowed Application */
             final ListPreference prefPackage = (ListPreference) this.findPreference(VPN_CONNECTION_MODE);
@@ -232,65 +251,118 @@ public class SettingsActivity extends AppCompatActivity {
 
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-            setHasOptionsMenu(true);
             mFilterPreferenceScreen = getPreferenceManager().createPreferenceScreen(getActivity());
             setPreferenceScreen(mFilterPreferenceScreen);
         }
 
         @Override
-        public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-            super.onCreateOptionsMenu(menu, inflater);
-            // Menuの設定
-            inflater.inflate(R.menu.menu_search, menu);
-            //MenuCompat.setGroupDividerEnabled(menu, true);
+        public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+            super.onViewCreated(view, savedInstanceState);
+            requireActivity().addMenuProvider(new MenuProvider() {
+                @Override
+                public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+                    menuInflater.inflate(R.menu.menu_search, menu);
 
-            final MenuItem menuSearch = menu.findItem(R.id.menu_search_item);
-            this.searchView = (SearchView) menuSearch.getActionView();
-            this.searchView.setOnQueryTextListener(this);
-            this.searchView.setOnCloseListener(this);
-            this.searchView.setSubmitButtonEnabled(false);
+                    final MenuItem menuSearch = menu.findItem(R.id.menu_search_item);
+                    searchView = (SearchView) menuSearch.getActionView();
+                    searchView.setOnQueryTextListener(PackageListFragment.this);
+                    searchView.setOnCloseListener(PackageListFragment.this);
+                    searchView.setSubmitButtonEnabled(false);
 
-            final MenuItem menuShowSystemApp = menu.findItem(R.id.menu_filter_app_system);
-            menuShowSystemApp.setChecked(this.filterAppType.contains(FilterAppType.SYSTEM_APP));
+                    final MenuItem menuShowSystemApp = menu.findItem(R.id.menu_filter_app_system);
+                    menuShowSystemApp.setChecked(filterAppType.contains(FilterAppType.SYSTEM_APP));
 
-            switch (this.appOrderBy) {
-                case ASC: {
-                    final MenuItem menuItem = menu.findItem(R.id.menu_sort_order_asc);
-                    menuItem.setChecked(true);
-                    break;
-                }
-                case DESC: {
-                    final MenuItem menuItem = menu.findItem(R.id.menu_sort_order_desc);
-                    menuItem.setChecked(true);
-                    break;
-                }
-            }
+                    switch (appOrderBy) {
+                        case ASC: {
+                            final MenuItem menuItem = menu.findItem(R.id.menu_sort_order_asc);
+                            menuItem.setChecked(true);
+                            break;
+                        }
+                        case DESC: {
+                            final MenuItem menuItem = menu.findItem(R.id.menu_sort_order_desc);
+                            menuItem.setChecked(true);
+                            break;
+                        }
+                    }
 
-            switch (this.appFilterBy) {
-                case APPNAME: {
-                    final MenuItem menuItem = menu.findItem(R.id.menu_filter_app_name);
-                    menuItem.setChecked(true);
-                    break;
-                }
-                case PKGNAME: {
-                    final MenuItem menuItem = menu.findItem(R.id.menu_filter_pkg_name);
-                    menuItem.setChecked(true);
-                    break;
-                }
-            }
+                    switch (appFilterBy) {
+                        case APPNAME: {
+                            final MenuItem menuItem = menu.findItem(R.id.menu_filter_app_name);
+                            menuItem.setChecked(true);
+                            break;
+                        }
+                        case PKGNAME: {
+                            final MenuItem menuItem = menu.findItem(R.id.menu_filter_pkg_name);
+                            menuItem.setChecked(true);
+                            break;
+                        }
+                    }
 
-            switch (this.appSortBy) {
-                case APPNAME: {
-                    final MenuItem menuItem = menu.findItem(R.id.menu_sort_app_name);
-                    menuItem.setChecked(true);
-                    break;
+                    switch (appSortBy) {
+                        case APPNAME: {
+                            final MenuItem menuItem = menu.findItem(R.id.menu_sort_app_name);
+                            menuItem.setChecked(true);
+                            break;
+                        }
+                        case PKGNAME: {
+                            final MenuItem menuItem = menu.findItem(R.id.menu_sort_pkg_name);
+                            menuItem.setChecked(true);
+                            break;
+                        }
+                    }
                 }
-                case PKGNAME: {
-                    final MenuItem menuItem = menu.findItem(R.id.menu_sort_pkg_name);
-                    menuItem.setChecked(true);
-                    break;
+
+                @Override
+                public boolean onMenuItemSelected(@NonNull MenuItem item) {
+                    int item_id = item.getItemId();
+                    if (item_id == android.R.id.home) {
+                        startActivity(new Intent(getActivity(), SettingsActivity.class));
+                        return true;
+                    }
+                    else if (item_id == R.id.menu_filter_app_system) {
+                        item.setChecked(!item.isChecked());
+                        if (item.isChecked()) {
+                            filterAppType.add(FilterAppType.SYSTEM_APP);
+                        }
+                        else {
+                            filterAppType.remove(FilterAppType.SYSTEM_APP);
+                        }
+                        filter(null, appFilterBy, MyApplication.AppOrderBy.ASC, appSortBy, filterAppType);
+                        return true;
+                    }
+                    else if (item_id == R.id.menu_sort_order_asc) {
+                        item.setChecked(!item.isChecked());
+                        filter(null, appFilterBy, MyApplication.AppOrderBy.ASC, appSortBy, filterAppType);
+                        return true;
+                    }
+                    else if (item_id == R.id.menu_sort_order_desc) {
+                        item.setChecked(!item.isChecked());
+                        filter(null, appFilterBy, MyApplication.AppOrderBy.DESC, appSortBy, filterAppType);
+                        return true;
+                    }
+                    else if (item_id == R.id.menu_filter_app_name) {
+                        item.setChecked(!item.isChecked());
+                        appFilterBy = MyApplication.AppSortBy.APPNAME;
+                        return true;
+                    }
+                    else if (item_id == R.id.menu_filter_pkg_name) {
+                        item.setChecked(!item.isChecked());
+                        appFilterBy = MyApplication.AppSortBy.PKGNAME;
+                        return true;
+                    }
+                    else if (item_id == R.id.menu_sort_app_name) {
+                        item.setChecked(!item.isChecked());
+                        filter(null, appFilterBy, appOrderBy, MyApplication.AppSortBy.APPNAME, filterAppType);
+                        return true;
+                    }
+                    else if (item_id == R.id.menu_sort_pkg_name) {
+                        item.setChecked(!item.isChecked());
+                        filter(null, appFilterBy, appOrderBy, MyApplication.AppSortBy.PKGNAME, filterAppType);
+                        return true;
+                    }
+                    return false;
                 }
-            }
+            }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
         }
 
         private String searchFilter = "";
@@ -488,51 +560,6 @@ public class SettingsActivity extends AppCompatActivity {
             MyApplication.getInstance().storeVPNApplication(this.mode, set);
         }
 
-        @Override
-        public boolean onOptionsItemSelected(MenuItem item) {
-            int item_id = item.getItemId();
-            if (item_id == android.R.id.home) {
-                startActivity(new Intent(getActivity(), SettingsActivity.class));
-                return true;
-            }
-            else if (item_id == R.id.menu_filter_app_system) {
-                item.setChecked(!item.isChecked());
-                if (item.isChecked()) {
-                    this.filterAppType.add(FilterAppType.SYSTEM_APP);
-                }
-                else {
-                    this.filterAppType.remove(FilterAppType.SYSTEM_APP);
-                }
-                filter(null, appFilterBy, MyApplication.AppOrderBy.ASC, appSortBy, this.filterAppType);
-            }
-            else if (item_id == R.id.menu_sort_order_asc) {
-                item.setChecked(!item.isChecked());
-                filter(null, appFilterBy, MyApplication.AppOrderBy.ASC, appSortBy, this.filterAppType);
-            }
-            else if (item_id == R.id.menu_sort_order_desc) {
-                item.setChecked(!item.isChecked());
-                filter(null, appFilterBy, MyApplication.AppOrderBy.DESC, appSortBy, this.filterAppType);
-            }
-            else if (item_id == R.id.menu_filter_app_name) {
-                item.setChecked(!item.isChecked());
-                this.appFilterBy = MyApplication.AppSortBy.APPNAME;
-                //filter(null, MyApplication.AppSortBy.APPNAME, appOrderBy, appSortBy);
-            }
-            else if (item_id == R.id.menu_filter_pkg_name) {
-                item.setChecked(!item.isChecked());
-                this.appFilterBy = MyApplication.AppSortBy.PKGNAME;
-                //filter(null, MyApplication.AppSortBy.PKGNAME, appOrderBy, appSortBy);
-            }
-            else if (item_id == R.id.menu_sort_app_name) {
-                item.setChecked(!item.isChecked());
-                filter(null, appFilterBy, appOrderBy, MyApplication.AppSortBy.APPNAME, this.filterAppType);
-            }
-            else if (item_id == R.id.menu_sort_pkg_name) {
-                    item.setChecked(!item.isChecked());
-                    filter(null, appFilterBy, appOrderBy, MyApplication.AppSortBy.PKGNAME, this.filterAppType);
-            }
-            return super.onOptionsItemSelected(item);
-        }
 
         @Override
         public boolean onQueryTextSubmit(String query) {
