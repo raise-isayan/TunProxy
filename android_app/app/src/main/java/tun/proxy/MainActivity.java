@@ -102,22 +102,19 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        switch (item.getItemId()) {
-            case R.id.action_activity_settings:
-                Intent intent = new android.content.Intent(this, SettingsActivity.class);
-                startActivity(intent);
-                break;
-            case R.id.action_show_about:
-                new AlertDialog.Builder(this)
-                    .setTitle(getString(R.string.app_name) + getVersionName())
-                    .setMessage(R.string.app_name)
-                    .show();
-                break;
-            default:
-                return super.onOptionsItemSelected(item);
+        int item_id = item.getItemId();
+        if (item_id == R.id.action_activity_settings) {
+            Intent intent = new android.content.Intent(this, SettingsActivity.class);
+            startActivity(intent);
+        }
+        else if (item_id ==  R.id.action_show_about) {
+            new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.app_name) + getVersionName())
+                .setMessage(R.string.app_name)
+                .show();
+        }
+        else {
+            return super.onOptionsItemSelected(item);
         }
         return true;
     }
