@@ -4,6 +4,27 @@
 
 extern struct ng_session *ng_session;
 
+static int should_redirect(const struct arguments *args, int port) {
+    if (port == args->proxyPort) return 0;
+    if (port == 53 && !args->fwd53) return 0;
+    return 1;
+}
+
+static int is_http_payload(const uint8_t *data, size_t len) {
+    if (len < 10) return 0;
+
+    if (data[0] < 'A' || data[0] > 'Z') return 0;
+    if (len >= strlen("CONNECT ") && memcmp(data, "CONNECT ", 8) == 0) return 0;
+
+    for (size_t i = 3; i < len - 8; i++) {
+        if (data[i] == '\r' || data[i] == '\n') break;
+        if (memcmp(data + i, " HTTP/1.", 8) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void clear_tcp_data(struct tcp_session *cur) {
     struct segment *s = cur->forward;
     while (s != NULL) {
@@ -96,7 +117,7 @@ int monitor_tcp_session(const struct arguments *args, struct ng_session *s, int 
 
         int rport = htons(s->tcp.dest);
         // Check for connected = writable
-        if (s->tcp.connect_sent == TCP_CONNECT_SENT && rport == 443)
+        if (s->tcp.connect_sent == TCP_CONNECT_SENT && rport != 80)
             events = events | EPOLLIN;
         else
             events = events | EPOLLOUT;
@@ -310,7 +331,7 @@ void check_tcp_socket(const struct arguments *args,
                     size_t len = s->tcp.forward->len - s->tcp.forward->sent;
                     size_t newlen = len;
                     uint8_t *new_data = 0;
-                    if (htons(s->tcp.dest) == 80) {
+                    if (s->tcp.is_http) {
                         new_data = patch_http_url(data, &newlen);
                         if (new_data) {
                             data = new_data;
@@ -634,9 +655,7 @@ jboolean handle_tcp(const struct arguments *args,
             s->tcp.sent = 0;
             s->tcp.received = 0;
             s->tcp.connect_sent = TCP_CONNECT_NOT_SENT;
-            if (rport == 80) {
-                s->tcp.connect_sent = TCP_CONNECT_ESTABLISHED;
-            }
+            s->tcp.is_http = 0;
 
             if (version == 4) {
                 s->tcp.saddr.ip4 = (__be32) ip4->saddr;
@@ -713,10 +732,14 @@ jboolean handle_tcp(const struct arguments *args,
             goto free;
         }
     } else {
-        if (rport == 443) {
+        int rport = htons(cur->tcp.dest);
+        int is_tls = (len > 0) || (datalen > 0 && data[0] == 0x16);
+        int is_http = is_http_payload(data, datalen);
+
+        if (should_redirect(args, rport)) {
             if (len > 0) {
                 strcpy(cur->tcp.hostname, hostname);
-            } else {
+            } else if (cur->tcp.hostname[0] == 0) {
                 struct sockaddr_in addr4;
                 addr4.sin_family = AF_INET;
                 addr4.sin_addr.s_addr = (__be32) cur->tcp.daddr.ip4;
@@ -727,22 +750,29 @@ jboolean handle_tcp(const struct arguments *args,
                     strcpy(cur->tcp.hostname, hostname);
                 }
             }
-            if (cur->tcp.connect_sent == TCP_CONNECT_NOT_SENT) {
-                if (len > 0) {
-                    char buffer[512];
-                    sprintf(buffer, "CONNECT %s:%d HTTP/1.0\r\n\r\n", cur->tcp.hostname, rport);
 
-                    ssize_t sent = send(cur->socket, buffer, strlen(buffer), MSG_NOSIGNAL);
-                    if (sent < 0) {
-                        write_rst(args, &cur->tcp);
-                    } else {
-                        cur->tcp.connect_sent = TCP_CONNECT_SENT;
-                        cur->tcp.state = TCP_LISTEN;
+            if (cur->tcp.connect_sent == TCP_CONNECT_NOT_SENT && datalen > 0) {
+                if (is_tls || rport == 443 || (!is_http && rport != 80)) {
+                    if (cur->tcp.hostname[0] != 0) {
+                        char buffer[512];
+                        sprintf(buffer, "CONNECT %s:%d HTTP/1.0\r\n\r\n", cur->tcp.hostname, rport);
+
+                        ssize_t sent = send(cur->socket, buffer, strlen(buffer), MSG_NOSIGNAL);
+                        if (sent < 0) {
+                            write_rst(args, &cur->tcp);
+                        } else {
+                            cur->tcp.connect_sent = TCP_CONNECT_SENT;
+                            cur->tcp.state = TCP_LISTEN;
+                        }
                     }
+                } else {
+                    // Plain HTTP detected or port 80 (assumed HTTP)
+                    cur->tcp.connect_sent = TCP_CONNECT_ESTABLISHED;
+                    cur->tcp.is_http = 1;
                 }
             }
         }
-        if (rport == 443 && cur->tcp.connect_sent != TCP_CONNECT_ESTABLISHED) {
+        if (should_redirect(args, rport) && cur->tcp.connect_sent != TCP_CONNECT_ESTABLISHED) {
             char session[250];
             sprintf(session,
                     "%s %s loc %u rem %u acked %u",
@@ -970,7 +1000,7 @@ int open_tcp_socket(const struct arguments *args,
     int version;
 
     int rport = htons(cur->dest);
-    if (rport != 80 && rport != 443) {
+    if (!should_redirect(args, rport)) {
         redirect = NULL;
     }
 

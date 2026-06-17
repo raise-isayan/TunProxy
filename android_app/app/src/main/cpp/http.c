@@ -112,7 +112,7 @@ uint8_t *find_data(uint8_t *data, size_t data_len, char *value) {
     return 0;
 }
 
-uint_t patch_buffer[2*MTU];
+uint8_t patch_buffer[2 * MTU];
 
 uint8_t *patch_http_url(uint8_t *data, size_t *data_len) {
     __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "patch_http_url start");
@@ -134,60 +134,27 @@ uint8_t *patch_http_url(uint8_t *data, size_t *data_len) {
 
     __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "patch_http_url find word");
 
-    //GET POST PUT DELETE HEAD OPTIONS PATCH
-    char *word;
-    uint8_t *pos = 0;
-    if ((pos = find_data(data, *data_len, "GET ")) > 0) {
-        word = "GET ";
-    } else if ((pos = find_data(data, *data_len, "POST ")) > 0) {
-        word = "POST ";
-    } else if ((pos = find_data(data, *data_len, "PUT ")) > 0) {
-        word = "PUT ";
-    } else if ((pos = find_data(data, *data_len, "DELETE ")) > 0) {
-        word = "DELETE ";
-    } else if ((pos = find_data(data, *data_len, "HEAD ")) > 0) {
-        word = "HEAD ";
-    } else if ((pos = find_data(data, *data_len, "OPTIONS ")) > 0) {
-        word = "OPTIONS ";
-    } else if ((pos = find_data(data, *data_len, "PATCH ")) > 0) {
-        word = "PATCH ";
-    } else if ((pos = find_data(data, *data_len, "HEAD ")) > 0) {
-        word = "HEAD ";
-    } else if ((pos = find_data(data, *data_len, "TRACE ")) > 0) {
-        word = "TRACE ";
-    } else if ((pos = find_data(data, *data_len, "PROPFIND ")) > 0) {
-        word = "PROPFIND ";
-    } else if ((pos = find_data(data, *data_len, "PROPPATCH ")) > 0) {
-        word = "PROPPATCH ";
-    } else if ((pos = find_data(data, *data_len, "MKCOL ")) > 0) {
-        word = "MKCOL ";
-    } else if ((pos = find_data(data, *data_len, "COPY ")) > 0) {
-        word = "COPY ";
-    } else if ((pos = find_data(data, *data_len, "MOVE ")) > 0) {
-        word = "MOVE ";
-    } else if ((pos = find_data(data, *data_len, "LOCK ")) > 0) {
-        word = "LOCK ";
-    } else if ((pos = find_data(data, *data_len, "UNLOCK ")) > 0) {
-        word = "UNLOCK ";
-    } else if ((pos = find_data(data, *data_len, "LINK ")) > 0) {
-        word = "LINK ";
-    } else if ((pos = find_data(data, *data_len, "UNLINK "))> 0) {
-        word = "UNLINK ";
+    size_t word_len = 0;
+    while (word_len < *data_len && data[word_len] != ' ' && data[word_len] != '\r' && data[word_len] != '\n') {
+        word_len++;
     }
 
-    if (!pos) {
-        LOG("patch_http_url no word");
+    if (word_len == 0 || word_len >= *data_len || data[word_len] != ' ') {
+        LOG("patch_http_url no method space");
         return 0;
     }
 
+    if (word_len == strlen("CONNECT")  && memcmp(data, "CONNECT", 7) == 0) {
+        LOG("patch_http_url skip CONNECT");
+        return 0;
+    }
 
-    size_t http_len = strlen("http://");
-    size_t word_len = strlen(word);
-    size_t pos1 = pos - data + word_len;
+    size_t pos1 = word_len + 1;
 
     LOG("patch_http_url word found");
 
-    if (data[pos1] == 'h' &&
+    if (pos1 + strlen("http://") <= *data_len &&
+        data[pos1] == 'h' &&
         data[pos1 + 1] == 't' &&
         data[pos1 + 2] == 't' &&
         data[pos1 + 3] == 'p' &&
@@ -199,8 +166,9 @@ uint8_t *patch_http_url(uint8_t *data, size_t *data_len) {
 
     uint8_t *new_data = &patch_buffer[0];
     LOG("patch_http_url start patch");
-    memcpy(new_data, data, pos1);
+    size_t http_len = strlen("http://");
 
+    memcpy(new_data, data, pos1);
     memcpy(new_data + pos1, "http://", http_len);
     memcpy(new_data + pos1 + http_len, hostname, length);
     memcpy(new_data + pos1 + http_len + length, data + pos1, *data_len - pos1);
