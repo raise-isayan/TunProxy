@@ -2,62 +2,21 @@ package tun.utils;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import tun.proxy.R;
+
 public abstract class ProgressTask<Params, Progress, Result> {
+    private static final String TAG = "ProgressTask";
+
     private volatile Status mStatus = Status.PENDING;
     private boolean canceled = false;
 
     public final ProgressTask.Status getStatus() {
         return  mStatus;
-    }
-
-    private class ProgressRunnable implements Runnable {
-
-        final Params [] params;
-
-        @SafeVarargs
-        public ProgressRunnable(Params... params) {
-            this.params = params;
-        }
-
-        private Result result;
-        Handler handler = new Handler(Looper.getMainLooper());
-
-        @Override
-        public void run() {
-            if (mStatus != Status.PENDING) {
-                switch (mStatus) {
-                    case RUNNING:
-                        throw new IllegalStateException("Cannot execute task:"
-                                + " the task is already running.");
-                    case FINISHED:
-                        throw new IllegalStateException("Cannot execute task:"
-                                + " the task has already been executed "
-                                + "(a task can be executed only once)");
-                }
-            }
-            mStatus = Status.RUNNING;
-            try {
-                onPreExecute();
-                result = doInBackground(params);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (!canceled) {
-                        onPostExecute(result);
-                        mStatus = Status.FINISHED;
-                    } else {
-                        onCancelled();
-                    }
-                }
-            });
-        }
     }
 
     @SafeVarargs
@@ -88,4 +47,48 @@ public abstract class ProgressTask<Params, Progress, Result> {
     }
 
     public enum Status { PENDING, RUNNING, FINISHED }
+
+    private class ProgressRunnable implements Runnable {
+
+        final Params [] params;
+        Handler handler = new Handler(Looper.getMainLooper());
+        private Result result;
+        @SafeVarargs
+        public ProgressRunnable(Params... params) {
+            this.params = params;
+        }
+
+        @Override
+        public void run() {
+            if (mStatus != Status.PENDING) {
+                switch (mStatus) {
+                    case RUNNING:
+                        throw new IllegalStateException("Cannot execute task:"
+                                + " the task is already running.");
+                    case FINISHED:
+                        throw new IllegalStateException("Cannot execute task:"
+                                + " the task has already been executed "
+                                + "(a task can be executed only once)");
+                }
+            }
+            mStatus = Status.RUNNING;
+            try {
+                onPreExecute();
+                result = doInBackground(params);
+            } catch (Exception ex) {
+                Log.e(TAG, ex.getMessage(), ex);
+            }
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (!canceled) {
+                        onPostExecute(result);
+                        mStatus = Status.FINISHED;
+                    } else {
+                        onCancelled();
+                    }
+                }
+            });
+        }
+    }
 }

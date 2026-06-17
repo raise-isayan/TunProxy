@@ -41,10 +41,6 @@ public class MainActivity extends AppCompatActivity {
     Button start;
     Button stop;
     EditText hostEditText;
-    Handler statusHandler = new Handler(Looper.getMainLooper());
-
-    private Tun2HttpVpnService service;
-
     private final ActivityResultLauncher<Intent> vpnRequestLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -53,6 +49,18 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
     );
+    Handler statusHandler = new Handler(Looper.getMainLooper());
+    private Tun2HttpVpnService service;
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder binder) {
+            Tun2HttpVpnService.ServiceBinder serviceBinder = (Tun2HttpVpnService.ServiceBinder) binder;
+            service = serviceBinder.getService();
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            service = null;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
         loadHostPort();
 
     }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -135,17 +144,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private ServiceConnection serviceConnection = new ServiceConnection() {
-        public void onServiceConnected(ComponentName className, IBinder binder) {
-            Tun2HttpVpnService.ServiceBinder serviceBinder = (Tun2HttpVpnService.ServiceBinder) binder;
-            service = serviceBinder.getService();
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            service = null;
-        }
-    };
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -163,20 +161,18 @@ public class MainActivity extends AppCompatActivity {
         return service != null && service.isRunning();
     }
 
-    Runnable statusRunnable = new Runnable() {
-        @Override
-        public void run() {
-        updateStatus();
-        statusHandler.post(statusRunnable);
-        }
-    };
-
     @Override
     protected void onPause() {
         super.onPause();
         statusHandler.removeCallbacks(statusRunnable);
         unbindService(serviceConnection);
-    }
+    }    Runnable statusRunnable = new Runnable() {
+            @Override
+            public void run() {
+                updateStatus();
+                statusHandler.post(statusRunnable);
+            }
+    };
 
     void updateStatus() {
         if (service == null) {
@@ -252,4 +248,6 @@ public class MainActivity extends AppCompatActivity {
         edit.commit();
         return true;
     }
+
+
 }

@@ -19,10 +19,7 @@ import java.util.regex.Pattern;
 
 public class CertificateUtil {
     private static final String TAG = "CertificateManager";
-
-    public enum CertificateInstallType {SYSTEM, USER};
-
-    private final static Pattern CA_COMMON_NAME = Pattern.compile("CN=([^,]+),?.*$");
+    private final static Pattern CA_COMMON_NAME = Pattern.compile("CN=([^,]+),?.*$");;
     private final static Pattern CA_ORGANIZATION = Pattern.compile("O=([^,]+),?.*$");
 
     public static boolean findCAStore(String caName) {
@@ -34,7 +31,7 @@ public class CertificateUtil {
 
             ks.load(null, null);
             X509Certificate rootCACert = null;
-            Enumeration aliases = ks.aliases();
+            Enumeration<String> aliases = ks.aliases();
             while (aliases.hasMoreElements()) {
                 String alias = (String) aliases.nextElement();
                 rootCACert = (X509Certificate) ks.getCertificate(alias);
@@ -43,13 +40,7 @@ public class CertificateUtil {
                     break;
                 }
             }
-        } catch (IOException e) {
-            Log.e(TAG, e.getMessage(), e);
-        } catch (KeyStoreException e) {
-            Log.e(TAG, e.getMessage(), e);
-        } catch (NoSuchAlgorithmException e) {
-            Log.e(TAG, e.getMessage(), e);
-        } catch (CertificateException e) {
+        } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException e) {
             Log.e(TAG, e.getMessage(), e);
         }
         return found;
@@ -64,7 +55,7 @@ public class CertificateUtil {
 
             ks.load(null, null);
             X509Certificate rootCACert = null;
-            Enumeration aliases = ks.aliases();
+            Enumeration<String> aliases = ks.aliases();
             boolean found = false;
             while (aliases.hasMoreElements()) {
                 String alias = (String) aliases.nextElement();
@@ -72,13 +63,7 @@ public class CertificateUtil {
                 System.out.println(alias + "/" + cert.getIssuerX500Principal().getName());
                 rootCAList.add(cert);
             }
-        } catch (IOException e) {
-            Log.e(TAG, e.getMessage(), e);
-        } catch (KeyStoreException e) {
-            Log.e(TAG, e.getMessage(), e);
-        } catch (NoSuchAlgorithmException e) {
-            Log.e(TAG, e.getMessage(), e);
-        } catch (CertificateException e) {
+        } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException e) {
             Log.e(TAG, e.getMessage(), e);
         }
         return rootCAList;
@@ -94,7 +79,7 @@ public class CertificateUtil {
 
             ks.load(null, null);
             X509Certificate rootCACert = null;
-            Enumeration aliases = ks.aliases();
+            Enumeration<String> aliases = ks.aliases();
             List<X509Certificate> certList = new ArrayList<>();
             while (aliases.hasMoreElements()) {
                 String alias = (String) aliases.nextElement();
@@ -126,13 +111,7 @@ public class CertificateUtil {
             }
             rootCAMap.put("entry", rootCANameList.toArray(new String[0]));
             rootCAMap.put("value", rootCAList.toArray(new String[0]));
-        } catch (IOException e) {
-            Log.e(TAG, e.getMessage(), e);
-        } catch (KeyStoreException e) {
-            Log.e(TAG, e.getMessage(), e);
-        } catch (NoSuchAlgorithmException e) {
-            Log.e(TAG, e.getMessage(), e);
-        } catch (CertificateException e) {
+        } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException e) {
             Log.e(TAG, e.getMessage(), e);
         }
         return rootCAMap;
@@ -176,11 +155,7 @@ public class CertificateUtil {
         try (InputStream inStream = new FileInputStream(caFile)) {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             return (X509Certificate) cf.generateCertificate(inStream);
-        } catch (FileNotFoundException e) {
-            Log.e(TAG, e.getMessage(), e);
-        } catch (IOException e) {
-            Log.e(TAG, e.getMessage(), e);
-        } catch (CertificateException e) {
+        } catch (IOException | CertificateException e) {
             Log.e(TAG, e.getMessage(), e);
         }
         return null;
@@ -203,5 +178,7 @@ public class CertificateUtil {
         }
         return on;
     }
+
+public enum CertificateInstallType {SYSTEM, USER}
 
 }

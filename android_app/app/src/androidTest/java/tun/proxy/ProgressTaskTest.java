@@ -1,11 +1,9 @@
 package tun.proxy;
 
-import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.util.Log;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -16,7 +14,6 @@ import org.junit.runner.RunWith;
 import java.util.List;
 
 import tun.utils.ProgressTask;
-import tun.utils.Util;
 
 import static org.junit.Assert.assertEquals;
 
@@ -38,7 +35,7 @@ public class ProgressTaskTest {
     public void progressTask() {
         Log.w(TAG, "progressTask: start");
 
-        ProgressTask task = new ProgressTask<String, String, List<PackageInfo>>() {
+        ProgressTask<String, String, List<PackageInfo>> task = new ProgressTask<>() {
 
             @Override
             protected List<PackageInfo> doInBackground(String... var1) {

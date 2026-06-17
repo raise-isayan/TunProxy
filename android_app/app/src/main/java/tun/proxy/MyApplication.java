@@ -23,35 +23,38 @@ public class MyApplication extends Application {
         instance = this;
     }
 
-    public enum VPNMode {DISALLOW, ALLOW};
-    public enum AppSortBy {APPNAME, PKGNAME};
-    public enum AppOrderBy {ASC, DESC};
-    public enum AppFiltertBy {APPNAME, PKGNAME};
-
-    public VPNMode loadVPNMode() {
+        public VPNMode loadVPNMode() {
         final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         final String vpn_mode = sharedPreferences.getString(PREF_VPN_MODE, MyApplication.VPNMode.DISALLOW.name());
         return VPNMode.valueOf(vpn_mode);
-    }
+    };
 
     public void storeVPNMode(VPNMode mode) {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         final SharedPreferences.Editor editor = prefs.edit();
         editor.putString(PREF_VPN_MODE, mode.name()).apply();
         return;
-    }
+    };
 
     public Set<String> loadVPNApplication(VPNMode mode) {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         final Set<String> preference = prefs.getStringSet(PREF_APP_KEY[mode.ordinal()], new HashSet<String>());
         return preference;
-    }
+    };
 
     public void storeVPNApplication(VPNMode mode, final Set<String> set) {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         final SharedPreferences.Editor editor = prefs.edit();
         editor.putStringSet(PREF_APP_KEY[mode.ordinal()], set).apply();
         return;
-    }
+    };
+
+public enum VPNMode {DISALLOW, ALLOW}
+
+public enum AppSortBy {APPNAME, PKGNAME}
+
+public enum AppOrderBy {ASC, DESC}
+
+public enum AppFiltertBy {APPNAME, PKGNAME}
 
 }

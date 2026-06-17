@@ -43,12 +43,10 @@ public class Util {
                 LinkProperties lp = cm.getLinkProperties(an);
                 if (lp != null) {
                     List<InetAddress> dns = lp.getDnsServers();
-                    if (dns != null) {
-                        if (dns.size() > 0)
-                            dns1 = dns.get(0).getHostAddress();
-                        if (dns.size() > 1)
-                            dns2 = dns.get(1).getHostAddress();
-                    }
+                    if (dns.size() > 0)
+                        dns1 = dns.get(0).getHostAddress();
+                    if (dns.size() > 1)
+                        dns2 = dns.get(1).getHostAddress();
                 }
             }
         } else {

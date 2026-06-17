@@ -1,19 +1,22 @@
 package tun.proxy.service;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.VpnService;
 import android.os.Binder;
-import android.os.Build;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
 import android.os.RemoteException;
+
+import androidx.annotation.NonNull;
 import androidx.core.app.ServiceCompat;
 import androidx.preference.PreferenceManager;
+
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -28,6 +31,7 @@ import tun.proxy.MyApplication;
 import tun.proxy.R;
 import tun.utils.Util;
 
+@SuppressLint("VpnServicePolicy")
 public class Tun2HttpVpnService extends VpnService {
     public static final String PREF_PROXY_HOST = "pref_proxy_host";
     public static final String PREF_PROXY_PORT = "pref_proxy_port";
@@ -41,7 +45,6 @@ public class Tun2HttpVpnService extends VpnService {
         System.loadLibrary("tun2http");
     }
 
-    private Tun2HttpVpnService.Builder lastBuilder = null;
     private ParcelFileDescriptor vpn = null;
 
     synchronized private static PowerManager.WakeLock getLock(Context context) {
@@ -86,7 +89,7 @@ public class Tun2HttpVpnService extends VpnService {
 
     private void start() {
         if (vpn == null) {
-            lastBuilder = getBuilder();
+            Builder lastBuilder = getBuilder();
             vpn = startVPN(lastBuilder);
             if (vpn == null)
                 throw new IllegalStateException(getString((R.string.msg_start_failed)));
@@ -153,23 +156,21 @@ public class Tun2HttpVpnService extends VpnService {
         builder.setMtu(mtu);
 
         // AAdd list of allowed and disallowed applications
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            MyApplication app = (MyApplication) this.getApplication();
-            if (app.loadVPNMode() == MyApplication.VPNMode.DISALLOW) {
-                Set<String> disallow = app.loadVPNApplication(MyApplication.VPNMode.DISALLOW);
-                Log.d(TAG, "disallowed:" + disallow.size());
-                List<String> notFoundPackageList = new ArrayList<>();
-                builder.addDisallowedApplication(Arrays.asList(disallow.toArray(new String[0])), notFoundPackageList);
-                disallow.removeAll(notFoundPackageList);
-                MyApplication.getInstance().storeVPNApplication(MyApplication.VPNMode.DISALLOW, disallow);
-            } else {
-                Set<String> allow = app.loadVPNApplication(MyApplication.VPNMode.ALLOW);
-                Log.d(TAG, "allowed:" + allow.size());
-                List<String> notFoundPackageList = new ArrayList<>();
-                builder.addAllowedApplication(Arrays.asList(allow.toArray(new String[0])), notFoundPackageList);
-                allow.removeAll(notFoundPackageList);
-                MyApplication.getInstance().storeVPNApplication(MyApplication.VPNMode.ALLOW, allow);
-            }
+        MyApplication app = (MyApplication) this.getApplication();
+        if (app.loadVPNMode() == MyApplication.VPNMode.DISALLOW) {
+            Set<String> disallow = app.loadVPNApplication(MyApplication.VPNMode.DISALLOW);
+            Log.d(TAG, "disallowed:" + disallow.size());
+            List<String> notFoundPackageList = new ArrayList<>();
+            builder.addDisallowedApplication(Arrays.asList(disallow.toArray(new String[0])), notFoundPackageList);
+            disallow.removeAll(notFoundPackageList);
+            MyApplication.getInstance().storeVPNApplication(MyApplication.VPNMode.DISALLOW, disallow);
+        } else {
+            Set<String> allow = app.loadVPNApplication(MyApplication.VPNMode.ALLOW);
+            Log.d(TAG, "allowed:" + allow.size());
+            List<String> notFoundPackageList = new ArrayList<>();
+            builder.addAllowedApplication(Arrays.asList(allow.toArray(new String[0])), notFoundPackageList);
+            allow.removeAll(notFoundPackageList);
+            MyApplication.getInstance().storeVPNApplication(MyApplication.VPNMode.ALLOW, allow);
         }
 
         // Add list of allowed applications
@@ -302,6 +303,7 @@ public class Tun2HttpVpnService extends VpnService {
             super();
         }
 
+        @NonNull
         @Override
         public VpnService.Builder setMtu(int mtu) {
             this.mtu = mtu;
@@ -309,6 +311,7 @@ public class Tun2HttpVpnService extends VpnService {
             return this;
         }
 
+        @NonNull
         @Override
         public Builder addAddress(String address, int prefixLength) {
             listAddress.add(address + "/" + prefixLength);
@@ -316,6 +319,7 @@ public class Tun2HttpVpnService extends VpnService {
             return this;
         }
 
+        @NonNull
         @Override
         public Builder addRoute(String address, int prefixLength) {
             listRoute.add(address + "/" + prefixLength);
@@ -323,13 +327,15 @@ public class Tun2HttpVpnService extends VpnService {
             return this;
         }
 
+        @NonNull
         @Override
-       public Builder addDnsServer(InetAddress address) {
+        public Builder addDnsServer(InetAddress address) {
             listDns.add(address.getHostAddress());
             super.addDnsServer(address);
             return this;
-       }
+        }
 
+        @NonNull
         @Override
         public Builder addDnsServer(String address) {
 //            listDns.add(address);
@@ -338,7 +344,7 @@ public class Tun2HttpVpnService extends VpnService {
         }
 
         // min sdk 26
-        public Builder addAllowedApplication(final List<String> packageList, final List<String> notFoundPackegeList)  {
+        public void addAllowedApplication(final List<String> packageList, final List<String> notFoundPackegeList) {
             for (String pkg : packageList) {
                 try {
                     Log.i(TAG, "allowed:" + pkg);
@@ -347,19 +353,9 @@ public class Tun2HttpVpnService extends VpnService {
                     notFoundPackegeList.add(pkg);
                 }
             }
-            return this;
         }
 
-        public Builder addDisallowedApplication(final List<String> packageList) throws PackageManager.NameNotFoundException {
-            //
-            for (String pkg : packageList) {
-                Log.i(TAG, "disallowed:" + pkg);
-                addDisallowedApplication(pkg);
-            }
-            return this;
-        }
-
-        public Builder addDisallowedApplication(final List<String> packageList, final List<String> notFoundPackegeList)  {
+        public void addDisallowedApplication(final List<String> packageList, final List<String> notFoundPackegeList) {
             //
             for (String pkg : packageList) {
                 try {
@@ -369,7 +365,6 @@ public class Tun2HttpVpnService extends VpnService {
                     notFoundPackegeList.add(pkg);
                 }
             }
-            return this;
         }
 
         @Override

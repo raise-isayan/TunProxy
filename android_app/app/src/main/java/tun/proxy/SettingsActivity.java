@@ -28,7 +28,6 @@ import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle;
 import androidx.preference.*;
 
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -51,29 +50,7 @@ public class SettingsActivity extends AppCompatActivity implements
     private static final String TAG = "SettingsActivity";
     private static final String TITLE_TAG = "Settings";
 
-    public enum FilterAppType {
-        SYSTEM_APP,
-        OS_APP;
-
-        public static EnumSet<FilterAppType> parseEnumSet(String s) {
-            EnumSet<FilterAppType> filterType = EnumSet.noneOf(FilterAppType.class);
-            if (!s.startsWith("[") && s.endsWith("]")) {
-                throw new IllegalArgumentException("No enum constant " + FilterAppType.class.getCanonicalName() + "." + s);
-            }
-            String content = s.substring(1, s.length() - 1).trim();
-            if (content.isEmpty()) {
-                return filterType;
-            }
-            for (String t : content.split(",")) {
-                String v = t.trim();
-                filterType.add(Enum.valueOf(FilterAppType.class, v.replaceAll("\"", "")));
-            }
-            return filterType;
-        }
-
-    };
-
-    @Override
+        @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this, SystemBarStyle.dark(Color.TRANSPARENT));
@@ -103,10 +80,10 @@ public class SettingsActivity extends AppCompatActivity implements
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
-    }
+    };
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putCharSequence(TITLE_TAG, getTitle());
     }
@@ -120,7 +97,7 @@ public class SettingsActivity extends AppCompatActivity implements
     }
 
     @Override
-    public boolean onPreferenceStartFragment(PreferenceFragmentCompat caller, Preference pref) {
+    public boolean onPreferenceStartFragment(@NonNull PreferenceFragmentCompat caller, Preference pref) {
         final Bundle args = pref.getExtras();
         final Fragment fragment = getSupportFragmentManager().getFragmentFactory().instantiate(getClassLoader(), pref.getFragment());
         fragment.setArguments(args);
@@ -130,6 +107,28 @@ public class SettingsActivity extends AppCompatActivity implements
                 .commit();
         setTitle(pref.getTitle());
         return true;
+    }
+
+public enum FilterAppType {
+        SYSTEM_APP,
+        OS_APP;
+
+        public static EnumSet<FilterAppType> parseEnumSet(String s) {
+            EnumSet<FilterAppType> filterType = EnumSet.noneOf(FilterAppType.class);
+            if (!s.startsWith("[") && s.endsWith("]")) {
+                throw new IllegalArgumentException("No enum constant " + FilterAppType.class.getCanonicalName() + "." + s);
+            }
+            String content = s.substring(1, s.length() - 1).trim();
+            if (content.isEmpty()) {
+                return filterType;
+            }
+            for (String t : content.split(",")) {
+                String v = t.trim();
+                filterType.add(Enum.valueOf(FilterAppType.class, v.replaceAll("\"", "")));
+            }
+            return filterType;
+        }
+
     }
 
     /**
@@ -148,9 +147,13 @@ public class SettingsActivity extends AppCompatActivity implements
 
             /* Allowed / Disallowed Application */
             final ListPreference prefPackage = (ListPreference) this.findPreference(VPN_CONNECTION_MODE);
+            assert prefPackage != null;
             final PreferenceScreen prefDisallow = (PreferenceScreen) findPreference(VPN_DISALLOWED_APPLICATION_LIST);
+            assert prefDisallow != null;
             final PreferenceScreen prefAllow = (PreferenceScreen) findPreference(VPN_ALLOWED_APPLICATION_LIST);
+            assert prefAllow != null;
             final PreferenceScreen clearAllSelection = (PreferenceScreen) findPreference(VPN_CLEAR_ALL_SELECTION);
+            assert clearAllSelection != null;
             clearAllSelection.setOnPreferenceClickListener(this);
 
             prefPackage.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
@@ -222,29 +225,25 @@ public class SettingsActivity extends AppCompatActivity implements
 
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class DisallowedPackageListFragment extends PackageListFragment {
         public DisallowedPackageListFragment() {
             super(MyApplication.VPNMode.DISALLOW);
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public static class AllowedPackageListFragment extends PackageListFragment  {
         public AllowedPackageListFragment() {
             super(MyApplication.VPNMode.ALLOW);
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     protected static class PackageListFragment extends PreferenceFragmentCompat
             implements SearchView.OnQueryTextListener, SearchView.OnCloseListener {
-        private final Map<String, Boolean> mAllPackageInfoMap = new HashMap<>();
         private final static String PREF_VPN_APPLICATION_APP_TYPE = "pref_vpn_application_app_system";
         private final static String PREF_VPN_APPLICATION_ORDER_BY = "pref_vpn_application_app_orderby";
         private final static String PREF_VPN_APPLICATION_FILTER_BY = "pref_vpn_application_app_filterby";
         private final static String PREF_VPN_APPLICATION_SORT_BY = "pref_vpn_application_app_sortby";
-
+        private final Map<String, Boolean> mAllPackageInfoMap = new HashMap<>();
         private AsyncTaskProgress task;
 
         private MyApplication.VPNMode mode;
@@ -254,6 +253,8 @@ public class SettingsActivity extends AppCompatActivity implements
         private MyApplication.AppOrderBy appOrderBy = MyApplication.AppOrderBy.ASC;
         private MyApplication.AppSortBy appFilterBy = MyApplication.AppSortBy.APPNAME;
         private PreferenceScreen mFilterPreferenceScreen;
+        private String searchFilter = "";
+        private SearchView searchView;
 
         public PackageListFragment(MyApplication.VPNMode mode) {
             super();
@@ -376,9 +377,6 @@ public class SettingsActivity extends AppCompatActivity implements
                 }
             }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
         }
-
-        private String searchFilter = "";
-        private SearchView searchView;
 
         protected void filter(String filter) {
             this.filter(filter, this.appFilterBy, this.appOrderBy, this.appSortBy, this.filterAppType);
@@ -633,7 +631,9 @@ public class SettingsActivity extends AppCompatActivity implements
                     String t2 = "";
                     switch (sortBy) {
                         case APPNAME:
+                            assert o1.applicationInfo != null;
                             t1 = o1.applicationInfo.loadLabel(pm).toString();
+                            assert o2.applicationInfo != null;
                             t2 = o2.applicationInfo.loadLabel(pm).toString();
                             break;
                         case PKGNAME:
@@ -656,6 +656,7 @@ public class SettingsActivity extends AppCompatActivity implements
                 }
                 // exclude system app
                 if (!filterAppType.contains(FilterAppType.SYSTEM_APP)) {
+                    assert pi.applicationInfo != null;
                     if ((pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == ApplicationInfo.FLAG_SYSTEM) {
                         continue;
                     }
@@ -680,6 +681,7 @@ public class SettingsActivity extends AppCompatActivity implements
                 }
                 // exclude system app
                 if (!packageFragment.filterAppType.contains(FilterAppType.SYSTEM_APP)) {
+                    assert pi.applicationInfo != null;
                     if ((pi.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == ApplicationInfo.FLAG_SYSTEM) {
                         continue;
                     }
