@@ -6,12 +6,9 @@ android {
     compileSdkVersion 37
     buildToolsVersion "37.0.0"
 
-//    sourceCompatibility = '1.8' // -source
-//    targetCompatibility = '1.8' // -target
-
     defaultConfig {
         applicationId "tun.proxy"
-        minSdkVersion 23
+        minSdk 23
         targetSdk 37
         versionCode 100290
         versionName VERSION_NAME
@@ -54,15 +51,16 @@ android {
         abortOnError = false
     }
 
-    applicationVariants.all { variant ->
-        if (variant.buildType.name.equals("release")) {
-            variant.outputs.all {
-                if (outputFileName != null && outputFileName.endsWith('.apk')) {
-                    def versionName = defaultConfig.versionName
-                    outputFileName = "${APP_NAME}_v${versionName}.apk"
+    androidComponents {
+        // すべてのビルドバリアントに対して処理を行う
+        onVariants(selector().all(), { variant ->
+            if (variant.buildType == "release") {
+                variant.outputs.each { output ->
+                    def versionName = android.defaultConfig.versionName
+                    output.outputFileName.set("${APP_NAME}_v${versionName}.apk")
                 }
             }
-        }
+        })
     }
 
 }
