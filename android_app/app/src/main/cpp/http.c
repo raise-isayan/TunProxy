@@ -153,7 +153,8 @@ uint8_t *patch_http_url(uint8_t *data, size_t *data_len) {
 
     LOG("patch_http_url word found");
 
-    if (pos1 + strlen("http://") <= *data_len &&
+    size_t http_len = strlen("http://");
+    if (pos1 + http_len <= *data_len &&
         data[pos1] == 'h' &&
         data[pos1 + 1] == 't' &&
         data[pos1 + 2] == 't' &&
@@ -166,7 +167,6 @@ uint8_t *patch_http_url(uint8_t *data, size_t *data_len) {
 
     uint8_t *new_data = &patch_buffer[0];
     LOG("patch_http_url start patch");
-    size_t http_len = strlen("http://");
 
     memcpy(new_data, data, pos1);
     memcpy(new_data + pos1, "http://", http_len);

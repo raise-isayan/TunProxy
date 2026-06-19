@@ -735,6 +735,7 @@ jboolean handle_tcp(const struct arguments *args,
         int rport = htons(cur->tcp.dest);
         int is_tls = (len > 0) || (datalen > 0 && data[0] == 0x16);
         int is_http = is_http_payload(data, datalen);
+        cur->tcp.is_http = is_http;
 
         if (should_redirect(args, rport)) {
             if (len > 0) {
@@ -766,9 +767,7 @@ jboolean handle_tcp(const struct arguments *args,
                         }
                     }
                 } else {
-                    // Plain HTTP detected or port 80 (assumed HTTP)
                     cur->tcp.connect_sent = TCP_CONNECT_ESTABLISHED;
-                    cur->tcp.is_http = 1;
                 }
             }
         }

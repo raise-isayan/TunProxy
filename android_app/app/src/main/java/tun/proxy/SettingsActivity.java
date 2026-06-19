@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import tun.utils.ProgressTask;
@@ -50,7 +51,7 @@ public class SettingsActivity extends AppCompatActivity implements
     private static final String TAG = "SettingsActivity";
     private static final String TITLE_TAG = "Settings";
 
-        @Override
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this, SystemBarStyle.dark(Color.TRANSPARENT));
@@ -99,6 +100,7 @@ public class SettingsActivity extends AppCompatActivity implements
     @Override
     public boolean onPreferenceStartFragment(@NonNull PreferenceFragmentCompat caller, Preference pref) {
         final Bundle args = pref.getExtras();
+        assert pref.getFragment() != null;
         final Fragment fragment = getSupportFragmentManager().getFragmentFactory().instantiate(getClassLoader(), pref.getFragment());
         fragment.setArguments(args);
         getSupportFragmentManager().beginTransaction()
@@ -124,7 +126,7 @@ public enum FilterAppType {
             }
             for (String t : content.split(",")) {
                 String v = t.trim();
-                filterType.add(Enum.valueOf(FilterAppType.class, v.replaceAll("\"", "")));
+                filterType.add(Enum.valueOf(FilterAppType.class, v.replace("\"", "")));
             }
             return filterType;
         }
@@ -204,7 +206,7 @@ public enum FilterAppType {
                 case VPN_ALLOWED_APPLICATION_LIST:
                     break;
                 case VPN_CLEAR_ALL_SELECTION:
-                    new AlertDialog.Builder(getActivity())
+                    new AlertDialog.Builder(requireActivity())
                         .setTitle(getString(R.string.title_activity_settings))
                         .setMessage(getString(R.string.pref_dialog_clear_all_application_msg))
                         .setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -246,7 +248,7 @@ public enum FilterAppType {
         private final Map<String, Boolean> mAllPackageInfoMap = new HashMap<>();
         private AsyncTaskProgress task;
 
-        private MyApplication.VPNMode mode;
+        private final MyApplication.VPNMode mode;
 
         private EnumSet<FilterAppType> filterAppType = EnumSet.noneOf(FilterAppType.class);
         private MyApplication.AppSortBy appSortBy = MyApplication.AppSortBy.APPNAME;
@@ -278,6 +280,7 @@ public enum FilterAppType {
 
                     final MenuItem menuSearch = menu.findItem(R.id.menu_search_item);
                     searchView = (SearchView) menuSearch.getActionView();
+                    assert searchView != null;
                     searchView.setOnQueryTextListener(PackageListFragment.this);
                     searchView.setOnCloseListener(PackageListFragment.this);
                     searchView.setSubmitButtonEnabled(false);
@@ -502,7 +505,7 @@ public enum FilterAppType {
 //        }
 
         private Preference buildPackagePreferences(final PackageManager pm, final PackageInfo pi) {
-            final CheckBoxPreference prefCheck = new CheckBoxPreference(getActivity());
+            final CheckBoxPreference prefCheck = new CheckBoxPreference(requireActivity());
             prefCheck.setIcon(pi.applicationInfo.loadIcon(pm));
             prefCheck.setTitle(pi.applicationInfo.loadLabel(pm).toString());
             prefCheck.setSummary(pi.packageName);

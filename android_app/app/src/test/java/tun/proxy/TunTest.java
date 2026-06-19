@@ -1,31 +1,25 @@
 package tun.proxy;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
+
+import java.util.EnumSet;
 
 import tun.utils.IPUtil;
 
-import static org.junit.Assert.*;
 
 /**
  * Example local unit test, which will execute on the development machine (host).
  *
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
-public class IPUtilTest {
+public class TunTest {
     @Test
-    public void testIsValidIPv4Address() {
-        assertEquals(IPUtil.isValidIPv4Address(""), false);
-        assertEquals(IPUtil.isValidIPv4Address("127.0.0.1"), true);
-        // 1 <= port <= 65535
-        assertEquals(IPUtil.isValidIPv4Address("127.0.0.1:0"), false);
-        assertEquals(IPUtil.isValidIPv4Address("127.0.0.1:1"), true);
-        assertEquals(IPUtil.isValidIPv4Address("127.0.0.1:65535"), true);
-        assertEquals(IPUtil.isValidIPv4Address("127.0.0.1:65536"), false);
-        assertEquals(IPUtil.isValidIPv4Address("127:8000"), false);
-        assertEquals(IPUtil.isValidIPv4Address("127.0:8000"), false);
-        assertEquals(IPUtil.isValidIPv4Address("127.0.0.0.1:8000"), false);
-        assertEquals(IPUtil.isValidIPv4Address("127.255.0.1:8000"), true);
-        assertEquals(IPUtil.isValidIPv4Address("127.256.0.1:8000"), false);
-        assertEquals(IPUtil.isValidIPv4Address("www.example.com:8000"), false);
+    public void testSettingsActivity() {
+        EnumSet<SettingsActivity.FilterAppType> filterType = EnumSet.allOf(SettingsActivity.FilterAppType.class);
+        System.out.println("FilterAppType:" + filterType.toString());
+        EnumSet<SettingsActivity.FilterAppType> result =  SettingsActivity.FilterAppType.parseEnumSet(filterType.toString());
+        assertEquals(result, filterType);
     }
 }

@@ -245,7 +245,7 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences.Editor edit = prefs.edit();
         edit.putString(Tun2HttpVpnService.PREF_PROXY_HOST, host);
         edit.putInt(Tun2HttpVpnService.PREF_PROXY_PORT, port);
-        edit.commit();
+        edit.apply();
         return true;
     }
 
