@@ -171,6 +171,7 @@ struct tcp_session {
     char hostname[512];
     int connect_sent;
     uint8_t is_http;
+    uint8_t is_tls;
 };
 
 struct ng_session {

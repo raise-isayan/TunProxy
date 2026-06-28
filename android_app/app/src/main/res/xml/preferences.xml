@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <PreferenceCategory
         android:key="vpn_connection_setting"
         android:title="VPN connection setting"
@@ -45,5 +46,27 @@
             android:key="vpn_clear_all_selection"
             android:title="Clear all selection" />
 
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="dns_setting"
+        android:title="@string/pref_header_dns">
+        <SwitchPreferenceCompat
+            android:key="pref_dns_custom"
+            android:title="@string/pref_dns_custom"
+            android:summary="@string/pref_dns_custom_summary"
+            android:defaultValue="false" />
+        <EditTextPreference
+            android:key="pref_dns_primary"
+            android:title="@string/pref_dns_primary"
+            android:dependency="pref_dns_custom"
+            android:defaultValue="8.8.8.8"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            android:key="pref_dns_secondary"
+            android:title="@string/pref_dns_secondary"
+            android:dependency="pref_dns_custom"
+            android:defaultValue="8.8.4.4"
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 </PreferenceScreen>

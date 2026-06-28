@@ -19,6 +19,7 @@ import androidx.preference.PreferenceManager;
 
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -35,6 +36,9 @@ import tun.utils.Util;
 public class Tun2HttpVpnService extends VpnService {
     public static final String PREF_PROXY_HOST = "pref_proxy_host";
     public static final String PREF_PROXY_PORT = "pref_proxy_port";
+    public static final String PREF_DNS_CUSTOM = "pref_dns_custom";
+    public static final String PREF_DNS_PRIMARY = "pref_dns_primary";
+    public static final String PREF_DNS_SECONDARY = "pref_dns_secondary";
     public static final String PREF_RUNNING = "pref_running";
     private static final String TAG = "Tun2Http.Service";
     private static final String ACTION_START = "start";
@@ -144,10 +148,26 @@ public class Tun2HttpVpnService extends VpnService {
         builder.addRoute("0.0.0.0", 0);
         builder.addRoute("0:0:0:0:0:0:0:0", 0);
 
-        List<String> dnsList = Util.getDefaultDNS(MyApplication.getInstance().getApplicationContext());
-        for (String dns : dnsList) {
-            Log.i(TAG, "default DNS:" + dns);
-            builder.addDnsServer(dns);
+        if (prefs.getBoolean(PREF_DNS_CUSTOM, false)) {
+            String dns1 = prefs.getString(PREF_DNS_PRIMARY, "8.8.8.8");
+            String dns2 = prefs.getString(PREF_DNS_SECONDARY, "8.8.4.4");
+            if (!TextUtils.isEmpty(dns1)) {
+                Log.i(TAG, "custom DNS:" + dns1);
+                builder.addDnsServer(dns1);
+            }
+            if (!TextUtils.isEmpty(dns2)) {
+                Log.i(TAG, "custom DNS:" + dns2);
+                builder.addDnsServer(dns2);
+            }
+        } else {
+            List<String> dnsList = Util.getDefaultDNS(MyApplication.getInstance().getApplicationContext());
+            for (String dns : dnsList) {
+                Log.i(TAG, "default DNS:" + dns);
+                builder.addDnsServer(dns);
+            }
+        }
+        if (builder.listDns.isEmpty()) {
+            Toast.makeText(this, "DNS settings not found", Toast.LENGTH_SHORT).show();
         }
 
         // MTU

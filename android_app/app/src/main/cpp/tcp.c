@@ -656,6 +656,7 @@ jboolean handle_tcp(const struct arguments *args,
             s->tcp.received = 0;
             s->tcp.connect_sent = TCP_CONNECT_NOT_SENT;
             s->tcp.is_http = 0;
+            s->tcp.is_tls = 0;
 
             if (version == 4) {
                 s->tcp.saddr.ip4 = (__be32) ip4->saddr;
@@ -736,6 +737,7 @@ jboolean handle_tcp(const struct arguments *args,
         int is_tls = (len > 0) || (datalen > 0 && data[0] == 0x16);
         int is_http = is_http_payload(data, datalen);
         cur->tcp.is_http = is_http;
+        cur->tcp.is_tls = is_tls;
 
         if (should_redirect(args, rport)) {
             if (len > 0) {
