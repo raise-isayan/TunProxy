@@ -36,9 +36,6 @@ import tun.utils.Util;
 public class Tun2HttpVpnService extends VpnService {
     public static final String PREF_PROXY_HOST = "pref_proxy_host";
     public static final String PREF_PROXY_PORT = "pref_proxy_port";
-    public static final String PREF_DNS_CUSTOM = "pref_dns_custom";
-    public static final String PREF_DNS_PRIMARY = "pref_dns_primary";
-    public static final String PREF_DNS_SECONDARY = "pref_dns_secondary";
     public static final String PREF_RUNNING = "pref_running";
     private static final String TAG = "Tun2Http.Service";
     private static final String ACTION_START = "start";
@@ -133,13 +130,13 @@ public class Tun2HttpVpnService extends VpnService {
     }
 
     private Builder getBuilder() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
         // Build VPN service
         Builder builder = new Builder();
         builder.setSession(getString(R.string.app_name));
 
         // VPN address
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String vpn4 = prefs.getString("vpn4", "10.1.10.1");
         builder.addAddress(vpn4, 32);
         String vpn6 = prefs.getString("vpn6", "fd00:1:fd00:1:fd00:1:fd00:1");
@@ -148,15 +145,17 @@ public class Tun2HttpVpnService extends VpnService {
         builder.addRoute("0.0.0.0", 0);
         builder.addRoute("0:0:0:0:0:0:0:0", 0);
 
-        if (prefs.getBoolean(PREF_DNS_CUSTOM, false)) {
-            String dns1 = prefs.getString(PREF_DNS_PRIMARY, "8.8.8.8");
-            String dns2 = prefs.getString(PREF_DNS_SECONDARY, "8.8.4.4");
+        MyApplication app = (MyApplication) this.getApplication();
+        assert app != null;
+        if (app.loadUseDnsCustom()) {
+            String dns1 = app.loadPrimaryDns("8.8.8.8");
+            String dns2 = app.loadSecondaryDns("8.8.4.4");;
             if (!TextUtils.isEmpty(dns1)) {
-                Log.i(TAG, "custom DNS:" + dns1);
+                Log.i(TAG, "custom primary DNS:" + dns1);
                 builder.addDnsServer(dns1);
             }
             if (!TextUtils.isEmpty(dns2)) {
-                Log.i(TAG, "custom DNS:" + dns2);
+                Log.i(TAG, "custom secondary DNS:" + dns2);
                 builder.addDnsServer(dns2);
             }
         } else {
@@ -176,7 +175,6 @@ public class Tun2HttpVpnService extends VpnService {
         builder.setMtu(mtu);
 
         // AAdd list of allowed and disallowed applications
-        MyApplication app = (MyApplication) this.getApplication();
         if (app.loadVPNMode() == MyApplication.VPNMode.DISALLOW) {
             Set<String> disallow = app.loadVPNApplication(MyApplication.VPNMode.DISALLOW);
             Log.d(TAG, "disallowed:" + disallow.size());
@@ -315,9 +313,9 @@ public class Tun2HttpVpnService extends VpnService {
 
     private class Builder extends VpnService.Builder {
         private int mtu;
-        private List<String> listAddress = new ArrayList<>();
-        private List<String> listRoute = new ArrayList<>();
-        private List<String> listDns = new ArrayList<>();
+        private final List<String> listAddress = new ArrayList<>();
+        private final List<String> listRoute = new ArrayList<>();
+        private final List<String> listDns = new ArrayList<>();
 
         private Builder() {
             super();

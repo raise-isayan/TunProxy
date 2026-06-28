@@ -49,12 +49,48 @@ public class MyApplication extends Application {
         return;
     };
 
-public enum VPNMode {DISALLOW, ALLOW}
+    public enum VPNMode {DISALLOW, ALLOW}
 
-public enum AppSortBy {APPNAME, PKGNAME}
+    public enum AppSortBy {APPNAME, PKGNAME}
 
-public enum AppOrderBy {ASC, DESC}
+    public enum AppOrderBy {ASC, DESC}
 
-public enum AppFiltertBy {APPNAME, PKGNAME}
+    public enum AppFiltertBy {APPNAME, PKGNAME}
 
+    private static final String PREF_DNS_USE_CUSTOM = "pref_dns_use_custom";
+    public static final String PREF_DNS_PRIMARY = "pref_dns_primary";
+    public static final String PREF_DNS_SECONDARY = "pref_dns_secondary";
+
+    public boolean loadUseDnsCustom() {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        return prefs.getBoolean(PREF_DNS_USE_CUSTOM, false);
+    }
+
+    public void storeUseDnsCustom(boolean isUseDnsCustom) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        final SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(PREF_DNS_USE_CUSTOM, isUseDnsCustom).apply();
+    }
+
+    public String loadPrimaryDns(String defValue) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        return prefs.getString(PREF_DNS_PRIMARY, defValue);
+    }
+
+    public void storePrimaryDns(String primaryDns) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        final SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(PREF_DNS_PRIMARY, primaryDns).apply();
+    }
+
+    public String loadSecondaryDns(String defValue) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        return prefs.getString(PREF_DNS_SECONDARY, defValue);
+    }
+
+    public void storeSecondaryDns(String secondaryDns) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        final SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(PREF_DNS_SECONDARY, secondaryDns).apply();
+    }
 }

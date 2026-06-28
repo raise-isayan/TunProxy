@@ -138,18 +138,34 @@ public enum FilterAppType {
      */
 
     public static class SettingsFragment extends PreferenceFragmentCompat implements Preference.OnPreferenceClickListener {
+        /*
+         * VPN connection setting
+         */
+
         public static final String VPN_CONNECTION_MODE = "vpn_connection_mode";
         public static final String VPN_DISALLOWED_APPLICATION_LIST = "vpn_disallowed_application_list";
         public static final String VPN_ALLOWED_APPLICATION_LIST = "vpn_allowed_application_list";
-        public static final String VPN_CLEAR_ALL_SELECTION = "vpn_clear_all_selection";
+        public static final String VPN_CLEAR_ALL_SELECTION = "vpn_dialog_clear_all_selection";
+
+        /*
+         * DNS setting
+         */
+        public static final String DNS_USE_CUSTOM = "dns_use_custom";
+        public static final String DNS_PRIMARY = "dns_primary";
+        public static final String DNS_SECONDARY = "dns_primary";
+
 
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             addPreferencesFromResource(R.xml.preferences);
 
+            /*
+             * VPN connection setting
+             */
+
             /* Allowed / Disallowed Application */
-            final ListPreference prefPackage = (ListPreference) this.findPreference(VPN_CONNECTION_MODE);
-            assert prefPackage != null;
+            final ListPreference prefVpnMode = (ListPreference) this.findPreference(VPN_CONNECTION_MODE);
+            assert prefVpnMode != null;
             final PreferenceScreen prefDisallow = (PreferenceScreen) findPreference(VPN_DISALLOWED_APPLICATION_LIST);
             assert prefDisallow != null;
             final PreferenceScreen prefAllow = (PreferenceScreen) findPreference(VPN_ALLOWED_APPLICATION_LIST);
@@ -158,39 +174,86 @@ public enum FilterAppType {
             assert clearAllSelection != null;
             clearAllSelection.setOnPreferenceClickListener(this);
 
-            prefPackage.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            prefVpnMode.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object value) {
-                if (preference instanceof ListPreference) {
-                    final ListPreference listPreference = (ListPreference) preference;
-                    int index = listPreference.findIndexOfValue((String) value);
-                    prefDisallow.setEnabled(index == MyApplication.VPNMode.DISALLOW.ordinal());
-                    prefAllow.setEnabled(index == MyApplication.VPNMode.ALLOW.ordinal());
+                    if (preference instanceof ListPreference) {
+                        final ListPreference listPreference = (ListPreference) preference;
+                        int index = listPreference.findIndexOfValue((String) value);
+                        prefDisallow.setEnabled(index == MyApplication.VPNMode.DISALLOW.ordinal());
+                        prefAllow.setEnabled(index == MyApplication.VPNMode.ALLOW.ordinal());
 
-                    // Set the summary to reflect the new value.
-                    preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
+                        // Set the summary to reflect the new value.
+                        preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
 
-                    MyApplication.VPNMode mode =  MyApplication.VPNMode.values()[index];
-                    MyApplication.getInstance().storeVPNMode(mode);
-                }
-                return true;
+                        MyApplication.VPNMode mode =  MyApplication.VPNMode.values()[index];
+                        MyApplication.getInstance().storeVPNMode(mode);
+                    }
+                    return true;
                 }
             });
-            prefPackage.setSummary(prefPackage.getEntry());
-            prefDisallow.setEnabled(MyApplication.VPNMode.DISALLOW.name().equals(prefPackage.getValue()));
-            prefAllow.setEnabled(MyApplication.VPNMode.ALLOW.name().equals(prefPackage.getValue()));
+            prefVpnMode.setSummary(prefVpnMode.getEntry());
+            prefDisallow.setEnabled(MyApplication.VPNMode.DISALLOW.name().equals(prefVpnMode.getValue()));
+            prefAllow.setEnabled(MyApplication.VPNMode.ALLOW.name().equals(prefVpnMode.getValue()));
+
+            /*
+             * DNS setting
+             */
+            final SwitchPreference prefUseDns = (SwitchPreference) this.findPreference(DNS_USE_CUSTOM);
+            assert prefUseDns != null;
+            prefUseDns.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
+                    if (preference instanceof SwitchPreference) {
+                        if (newValue instanceof Boolean) {
+                            MyApplication.getInstance().storeUseDnsCustom((Boolean)newValue);
+                        }
+                    }
+                    return true;
+                }
+            });
+            final EditTextPreference prefDnsPrimary = (EditTextPreference) this.findPreference(DNS_PRIMARY);
+            assert prefDnsPrimary != null;
+            prefDnsPrimary.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
+                    if (preference instanceof EditTextPreference) {
+                        if (newValue instanceof String) {
+                            MyApplication.getInstance().storePrimaryDns((String)newValue);
+                        }
+                    }
+                    return true;
+                }
+            });
+            final EditTextPreference prefDnsSecondary = (EditTextPreference) this.findPreference(DNS_SECONDARY);
+            assert prefDnsSecondary != null;
+            prefDnsSecondary.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
+                    if (preference instanceof EditTextPreference) {
+                        if (newValue instanceof String) {
+                            MyApplication.getInstance().storeSecondaryDns((String)newValue);
+                        }
+                    }
+                    return true;
+                }
+            });
 
             updateMenuItem();
+
         }
 
         private void updateMenuItem() {
             final PreferenceScreen prefDisallow = (PreferenceScreen) findPreference(VPN_DISALLOWED_APPLICATION_LIST);
             final PreferenceScreen prefAllow = (PreferenceScreen) findPreference(VPN_ALLOWED_APPLICATION_LIST);
 
-            int countDisallow = MyApplication.getInstance().loadVPNApplication(MyApplication.VPNMode.DISALLOW).size();
-            int countAllow = MyApplication.getInstance().loadVPNApplication(MyApplication.VPNMode.ALLOW).size();
-            prefDisallow.setTitle(getString(R.string.pref_header_disallowed_application_list) + String.format(" (%d)", countDisallow));
-            prefAllow.setTitle(getString(R.string.pref_header_allowed_application_list) + String.format(" (%d)", countAllow));
+            MyApplication app = MyApplication.getInstance();
+            assert app != null;
+            int countDisallow = app.loadVPNApplication(MyApplication.VPNMode.DISALLOW).size();
+            int countAllow = app.loadVPNApplication(MyApplication.VPNMode.ALLOW).size();
+            prefDisallow.setTitle(getString(R.string.vpn_disallowed_application_list) + String.format(" (%d)", countDisallow));
+            prefAllow.setTitle(getString(R.string.vpn_allowed_application_list) + String.format(" (%d)", countAllow));
+
         }
 
         /*
@@ -208,7 +271,7 @@ public enum FilterAppType {
                 case VPN_CLEAR_ALL_SELECTION:
                     new AlertDialog.Builder(requireActivity())
                         .setTitle(getString(R.string.title_activity_settings))
-                        .setMessage(getString(R.string.pref_dialog_clear_all_application_msg))
+                        .setMessage(getString(R.string.vpn_dialog_clear_all_application_msg))
                         .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
@@ -418,10 +481,11 @@ public enum FilterAppType {
                 this.task.cancel(true);
                 this.task = null;
             }
-
+            MyApplication app = MyApplication.getInstance();
+            assert app != null;
             Set<String> selected = this.getAllSelectedPackageSet();
             storeSelectedPackageSet(selected);
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MyApplication.getInstance().getApplicationContext());
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app.getApplicationContext());
             SharedPreferences.Editor edit = prefs.edit();
             edit.putString(PREF_VPN_APPLICATION_APP_TYPE, this.filterAppType.toString());
             edit.putString(PREF_VPN_APPLICATION_ORDER_BY, this.appOrderBy.name());
@@ -433,11 +497,12 @@ public enum FilterAppType {
         @Override
         public void onResume() {
             super.onResume();
-            Set<String> loadMap = MyApplication.getInstance().loadVPNApplication(this.mode);
+            MyApplication app = MyApplication.getInstance();
+            Set<String> loadMap = app.loadVPNApplication(this.mode);
             for (String pkgName : loadMap) {
                 this.mAllPackageInfoMap.put(pkgName, loadMap.contains(pkgName));
             }
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MyApplication.getInstance().getApplicationContext());
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app.getApplicationContext());
             String filterAppType = prefs.getString(PREF_VPN_APPLICATION_APP_TYPE, this.filterAppType.toString());
             this.filterAppType = FilterAppType.parseEnumSet(filterAppType);
             String appOrderBy = prefs.getString(PREF_VPN_APPLICATION_ORDER_BY, MyApplication.AppOrderBy.ASC.name());

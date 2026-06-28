@@ -3,69 +3,51 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <PreferenceCategory
         android:key="vpn_connection_setting"
-        android:title="@string/pref_vpn_connection"
+        android:title="@string/vpn_connection_setting"
         android:enabled="true">
         <ListPreference
             android:key="vpn_connection_mode"
-            android:title="@string/pref_vpn_connection_mode"
+            android:title="@string/vpn_connection_mode"
             android:defaultValue="DISALLOW"
             android:entries="@array/pref_vpn_connection_name"
             android:entryValues="@array/pref_vpn_connection_value"
             android:negativeButtonText="@null"
             android:positiveButtonText="@null"/>
-<!--
-        <Preference
-            android:fragment="tun.proxy.SettingsActivity$ApplicationListFragment"
-            android:key="vpn_disallowed_application_list"
-            android:title="@string/pref_header_disallowed_application_list"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <Preference
-            android:fragment="tun.proxy.SettingsActivity$ApplicationListFragment"
-            android:key="vpn_allowed_application_list"
-            android:title="@string/pref_header_allowed_application_list"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
--->
         <PreferenceScreen
             android:fragment="tun.proxy.SettingsActivity$DisallowedPackageListFragment"
             android:key="vpn_disallowed_application_list"
-            android:title="@string/pref_header_disallowed_application_list"
+            android:title="@string/vpn_disallowed_application_list"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
-
         <PreferenceScreen
             android:fragment="tun.proxy.SettingsActivity$AllowedPackageListFragment"
             android:key="vpn_allowed_application_list"
-            android:title="@string/pref_header_allowed_application_list"
+            android:title="@string/vpn_allowed_application_list"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
-
         <PreferenceScreen
-            android:key="vpn_clear_all_selection"
+            android:key="vpn_dialog_clear_all_selection"
             android:title="Clear all selection" />
-
     </PreferenceCategory>
 
     <PreferenceCategory
         android:key="dns_setting"
-        android:title="@string/pref_header_dns">
-        <SwitchPreferenceCompat
-            android:key="pref_dns_custom"
-            android:title="@string/pref_dns_custom"
-            android:summary="@string/pref_dns_custom_summary"
+        android:title="@string/dns_setting">
+        <SwitchPreference
+            android:key="dns_use_custom"
+            android:title="@string/dns_use_custom"
+            android:summary="@string/dns_use_custom_summary"
             android:defaultValue="false" />
         <EditTextPreference
-            android:key="pref_dns_primary"
-            android:title="@string/pref_dns_primary"
-            android:dependency="pref_dns_custom"
+            android:key="dns_primary"
+            android:title="@string/dns_primary"
+            android:dependency="dns_use_custom"
             android:defaultValue="8.8.8.8"
             app:useSimpleSummaryProvider="true" />
         <EditTextPreference
-            android:key="pref_dns_secondary"
-            android:title="@string/pref_dns_secondary"
-            android:dependency="pref_dns_custom"
+            android:key="dns_secondary"
+            android:title="@string/dns_secondary"
+            android:dependency="dns_use_custom"
             android:defaultValue="8.8.4.4"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
