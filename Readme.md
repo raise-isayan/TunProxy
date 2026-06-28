@@ -6,7 +6,7 @@ Language/[Japanese](https://github.com/raise-isayan/TunProxy/blob/master/Readme-
 This tool is a proxy configuration tool that takes advantage of Android VPNService feature. 
 Only the communication from the specified application can be acquired.
 
-## how to use
+## How to use
 
 When you start the TunProxy application, the following screen will be launched.
 
@@ -21,15 +21,17 @@ When you start the TunProxy application, the following screen will be launched.
 * [Stop] button
   * Stop the VPN service.
 
-## menu
+## Menu
 
 Application settings can be made from the menu icon (![Menu](images/Menu.png)) at the top of the screen.
 
-### Settings
+## Settings
 
 Configure VPN service settings.
 
 ![Menu Settings](images/Menu-Settings.png) ⇒ ![Menu Settings](images/Menu-Settings-app.png)
+
+## VPN connection setting
 
 There are two modes, Disallowed Application and Allowed Application, but you can not specify them at the same time.
 Because of this you will have to choose whether you want to run in either mode.
@@ -88,7 +90,23 @@ Changed the way the application list is displayed.
 * package name
   * Search for the package name that contains the keyword you specified.
 
-### MITM (SSL decrypt)
+## DNS setting
+
+Configure the DNS server settings.
+
+* Use Custom DNS
+  * Enable to specify custom DNS servers
+
+* Primary DNS
+  * Specify the primary DNS server.
+
+* Secondary DNS
+  * Specify the secondary DNS server.
+
+## About
+Display application version
+
+## MITM (SSL decrypt)
 
 TunProxy does not perform SSL decryption. TunProxy acts like a transparent proxy.
 To perform SSL decryption, set the IP of an SSL decryptable proxy such as Burp suite or Fiddler to the IP of TunProxy
@@ -114,17 +132,14 @@ Please refer to the following web site as a solution
 * Android 7 Nougat and certificate authorities
   * https://blog.jeroenhd.nl/article/android-7-nougat-and-certificate-authorities
 
-### About
-Display application version
-
 ## Operating environment
 
 * Android 6.0 (API Level 23) or later
 
-### ビルド
+### Build
  gradlew build
 
-## base application
+## Base application
 
 Most of the code was created based on the following applications for creating applications.
 

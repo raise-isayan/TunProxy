@@ -17,17 +17,19 @@
     <!-- Category -->
     <string name="search">Search</string>
 
+    <string name="pref_vpn_connection">VPN connection setting</string>
+
     <string name="pref_header_allowed_application_list">Allowed application list</string>
     <string name="pref_header_disallowed_application_list">Disallowed application list</string>
     <string name="pref_dialog_clear_all_application_msg">Clear all selections of Allowed / Disallowed application list</string>
 
     <string name="pref_vpn_connection_mode">Allowed / Disallowed Application</string>
-    <string name="pref_header_dns">DNS Settings</string>
+    <string name="pref_header_dns">DNS Setting</string>
     <string name="pref_dns_custom">Use Custom DNS</string>
     <string name="pref_dns_custom_summary">Enable to specify custom DNS servers</string>
     <string name="pref_dns_primary">Primary DNS</string>
     <string name="pref_dns_secondary">Secondary DNS</string>
-    <string name="loading">Prease wait</string>
+    <string name="loading">Please wait</string>
     <string-array name="pref_vpn_connection_name">
         <item>Disallowed Application</item>
         <item>Allowed Application</item>
