@@ -3,22 +3,22 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item android:id="@+id/menu_search_item"
-        android:title="@string/search"
+        android:title="@string/menu_search"
         android:icon="@android:drawable/ic_menu_search"
-        app:showAsAction="always"
+        app:showAsAction="ifRoom"
         android:orderInCategory="100"
         app:actionViewClass="android.widget.SearchView" />
     <!-- show app -->
     <item
         android:id="@+id/menu_filter_app_system"
-        android:title="show system app"
+        android:title="@string/menu_show_system_app"
         android:checkable="true"
         android:enabled="true"
         app:showAsAction="never" />
     <!-- sort by -->
     <item
         android:id="@+id/menu_sort_by"
-        android:title="sort by"
+        android:title="@string/menu_sort_by"
         android:orderInCategory="200"
         app:showAsAction="never">
         <menu>
@@ -32,12 +32,12 @@
                 <item
                     android:id="@+id/menu_sort_app_name"
                     android:checked="true"
-                    android:title="app name"
+                    android:title="@string/menu_app_name"
                     android:orderInCategory="111"
                     app:showAsAction="never" />
                 <item
                     android:id="@+id/menu_sort_pkg_name"
-                    android:title="package name"
+                    android:title="@string/menu_package_name"
                     android:orderInCategory="112"
                     app:showAsAction="never" />
             </group>
@@ -46,7 +46,7 @@
     <!-- order by -->
     <item
         android:id="@+id/menu_order_by"
-        android:title="order by"
+        android:title="@string/menu_order_by"
         android:orderInCategory="200"
         app:showAsAction="never">
         <menu>
@@ -60,12 +60,12 @@
                 <item
                     android:id="@+id/menu_sort_order_asc"
                     android:checked="true"
-                    android:title="ascending"
+                    android:title="@string/menu_order_by_asc"
                     android:orderInCategory="211"
                     app:showAsAction="never" />
                 <item
                     android:id="@+id/menu_sort_order_desc"
-                    android:title="descending"
+                    android:title="@string/menu_order_by_desc"
                     android:orderInCategory="212"
                     app:showAsAction="never" />
             </group>
@@ -74,7 +74,7 @@
     <!-- filter by -->
     <item
         android:id="@+id/menu_filter_by"
-        android:title="filter by"
+        android:title="@string/menu_filter_by"
         android:orderInCategory="200"
         app:showAsAction="never">
         <menu>
@@ -88,17 +88,15 @@
                 <item
                     android:id="@+id/menu_filter_app_name"
                     android:checked="true"
-                    android:title="app name"
+                    android:title="@string/menu_app_name"
                     android:orderInCategory="211"
                     app:showAsAction="never" />
                 <item
                     android:id="@+id/menu_filter_pkg_name"
-                    android:title="package name"
+                    android:title="@string/menu_package_name"
                     android:orderInCategory="212"
                     app:showAsAction="never" />
             </group>
         </menu>
     </item>
-
-
 </menu>

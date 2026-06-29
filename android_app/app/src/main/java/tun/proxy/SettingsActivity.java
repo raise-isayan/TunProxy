@@ -426,11 +426,13 @@ public enum FilterAppType {
                     else if (item_id == R.id.menu_filter_app_name) {
                         item.setChecked(!item.isChecked());
                         appFilterBy = MyApplication.AppSortBy.APPNAME;
+                        filter(null, appFilterBy, appOrderBy, MyApplication.AppSortBy.APPNAME, filterAppType);
                         return true;
                     }
                     else if (item_id == R.id.menu_filter_pkg_name) {
                         item.setChecked(!item.isChecked());
                         appFilterBy = MyApplication.AppSortBy.PKGNAME;
+                        filter(null, appFilterBy, appOrderBy, MyApplication.AppSortBy.PKGNAME, filterAppType);
                         return true;
                     }
                     else if (item_id == R.id.menu_sort_app_name) {
@@ -783,7 +785,6 @@ public enum FilterAppType {
             packageFragment.mFilterPreferenceScreen.removeAll();
             return;
         }
-
     }
 
     protected static class ProgressPreference extends Preference {
