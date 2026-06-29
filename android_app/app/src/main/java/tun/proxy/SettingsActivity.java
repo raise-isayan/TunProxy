@@ -138,10 +138,10 @@ public enum FilterAppType {
      */
 
     public static class SettingsFragment extends PreferenceFragmentCompat implements Preference.OnPreferenceClickListener {
+
         /*
          * VPN connection setting
          */
-
         public static final String VPN_CONNECTION_MODE = "vpn_connection_mode";
         public static final String VPN_DISALLOWED_APPLICATION_LIST = "vpn_disallowed_application_list";
         public static final String VPN_ALLOWED_APPLICATION_LIST = "vpn_allowed_application_list";
@@ -245,14 +245,18 @@ public enum FilterAppType {
 
         private void updateMenuItem() {
             final PreferenceScreen prefDisallow = (PreferenceScreen) findPreference(VPN_DISALLOWED_APPLICATION_LIST);
+            assert prefDisallow != null;
             final PreferenceScreen prefAllow = (PreferenceScreen) findPreference(VPN_ALLOWED_APPLICATION_LIST);
+            assert prefAllow != null;
 
             MyApplication app = MyApplication.getInstance();
             assert app != null;
             int countDisallow = app.loadVPNApplication(MyApplication.VPNMode.DISALLOW).size();
             int countAllow = app.loadVPNApplication(MyApplication.VPNMode.ALLOW).size();
-            prefDisallow.setTitle(getString(R.string.vpn_disallowed_application_list) + String.format(" (%d)", countDisallow));
-            prefAllow.setTitle(getString(R.string.vpn_allowed_application_list) + String.format(" (%d)", countAllow));
+            prefDisallow.setTitle(getString(R.string.vpn_disallowed_application_list));
+            prefDisallow.setSummary(getString(R.string.vpn_disallowed_application_count) + String.format(" %d", countDisallow));
+            prefAllow.setTitle(getString(R.string.vpn_allowed_application_list));
+            prefAllow.setSummary(getString(R.string.vpn_allowed_application_count) + String.format(" %d", countAllow));
 
         }
 
