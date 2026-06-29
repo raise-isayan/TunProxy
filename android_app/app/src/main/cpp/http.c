@@ -117,7 +117,7 @@ uint8_t patch_buffer[2 * MTU];
 uint8_t *patch_http_url(uint8_t *data, size_t *data_len) {
     __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "patch_http_url start");
 
-    char hostname[1024];
+    char hostname[512];
     uint8_t *host = find_data(data, *data_len, "Host: ");
     size_t length = 0;
     if (host) {
