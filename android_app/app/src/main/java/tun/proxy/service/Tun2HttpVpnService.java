@@ -5,8 +5,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.VpnService;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.ParcelFileDescriptor;
@@ -36,6 +40,7 @@ import tun.utils.Util;
 public class Tun2HttpVpnService extends VpnService {
     public static final String PREF_PROXY_HOST = "pref_proxy_host";
     public static final String PREF_PROXY_PORT = "pref_proxy_port";
+    public static final String PREF_CONNECTIVITY_CHECK = "pref_connectivity_check";
     public static final String PREF_RUNNING = "pref_running";
     private static final String TAG = "Tun2Http.Service";
     private static final String ACTION_START = "start";
@@ -86,6 +91,20 @@ public class Tun2HttpVpnService extends VpnService {
 
     public boolean isRunning() {
         return vpn != null;
+    }
+
+    public boolean isNetworkConnected() {
+        final ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm != null) {
+            final Network n = cm.getActiveNetwork();
+            if (n != null) {
+                final NetworkCapabilities nc = cm.getNetworkCapabilities(n);
+                if (nc != null) {
+                    return (nc.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) || nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI));
+                }
+            }
+        }
+        return false;
     }
 
     private void start() {
@@ -418,25 +437,6 @@ public class Tun2HttpVpnService extends VpnService {
 
             return true;
         }
-
-//        public boolean isNetworkConnected() {
-//            final ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
-//            if (cm != null) {
-//                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-//                    final android.net.NetworkInfo ni = cm.getActiveNetworkInfo();
-//                    if (ni != null) {
-//                        return (ni.isConnected() && (ni.getType() == ConnectivityManager.TYPE_WIFI || ni.getType() == ConnectivityManager.TYPE_MOBILE));
-//                    }
-//                } else {
-//                    final Network n = cm.getActiveNetwork();
-//                    if (n != null) {
-//                        final NetworkCapabilities nc = cm.getNetworkCapabilities(n);
-//                        return (nc.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) || nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI));
-//                    }
-//                }
-//            }
-//            return false;
-//        }
     }
 
 }

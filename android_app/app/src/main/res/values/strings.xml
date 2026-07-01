@@ -24,6 +24,7 @@
     <string name="menu_order_by_asc">ascending</string>
     <string name="menu_order_by_desc">descending</string>
     <string name="menu_filter_by">filter by</string>
+    <string name="loading">Please wait</string>
 
     <!-- VPN Setting -->
     <string name="vpn_connection_setting">VPN connection setting</string>
@@ -34,6 +35,7 @@
     <string name="vpn_disallowed_application_list">Disallowed application list</string>
     <string name="vpn_disallowed_application_count">selected application count: </string>
     <string name="vpn_dialog_clear_all_application_msg">Clear all selections of Allowed / Disallowed application list</string>
+
     <string-array name="pref_vpn_connection_name">
         <item>Disallowed Application</item>
         <item>Allowed Application</item>
@@ -43,12 +45,16 @@
         <item>ALLOW</item>
     </string-array>
 
+    <!-- Proxy Setting -->
+    <string name="proxy_setting">Proxy Setting</string>
+    <string name="pref_connectivity_check">Connectivity Check</string>
+    <string name="pref_connectivity_check_summary">Check proxy connectivity before starting</string>
+
     <!-- DNS Setting -->
     <string name="dns_setting">DNS Setting</string>
     <string name="dns_use_custom">Use Custom DNS</string>
     <string name="dns_use_custom_summary">Enable to specify custom DNS servers</string>
     <string name="dns_primary">Primary DNS</string>
     <string name="dns_secondary">Secondary DNS</string>
-    <string name="loading">Please wait</string>
 
 </resources>

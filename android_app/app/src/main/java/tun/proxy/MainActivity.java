@@ -27,11 +27,16 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
+
+import java.net.InetSocketAddress;
+import java.net.Socket;
 
 import tun.proxy.service.Tun2HttpVpnService;
 import tun.utils.IPUtil;
@@ -196,6 +201,43 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startVpn() {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean connectivityCheck = prefs.getBoolean(Tun2HttpVpnService.PREF_CONNECTIVITY_CHECK, false);
+
+        if (connectivityCheck) {
+            if (parseAndSaveHostPort()) {
+                String host = prefs.getString(Tun2HttpVpnService.PREF_PROXY_HOST, "");
+                int port = prefs.getInt(Tun2HttpVpnService.PREF_PROXY_PORT, 0);
+
+                new Thread(() -> {
+                    boolean reachable = false;
+                    if (service != null && service.isNetworkConnected()) {
+                        try (Socket socket = new Socket()) {
+                            socket.connect(new InetSocketAddress(host, port), 3000);
+                            reachable = true;
+                        } catch (Exception e) {
+                            Log.e("MainActivity", "Reachability check failed: " + e.getMessage());
+                        }
+                    }
+
+                    boolean finalReachable = reachable;
+                    runOnUiThread(() -> {
+                        if (finalReachable) {
+                            proceedWithStartVpn();
+                        } else {
+                            Toast.makeText(this, "Connectivity check failed", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }).start();
+            }
+        } else {
+            if (parseAndSaveHostPort()) {
+                proceedWithStartVpn();
+            }
+        }
+    }
+
+    private void proceedWithStartVpn() {
         Intent i = VpnService.prepare(this);
         if (i != null) {
             vpnRequestLauncher.launch(i);
@@ -205,11 +247,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void vpnPrepared() {
-        if (parseAndSaveHostPort()) {
-            start.setEnabled(false);
-            stop.setEnabled(true);
-            Tun2HttpVpnService.start(this);
-        }
+        start.setEnabled(false);
+        stop.setEnabled(true);
+        Tun2HttpVpnService.start(this);
     }
 
     private void loadHostPort() {

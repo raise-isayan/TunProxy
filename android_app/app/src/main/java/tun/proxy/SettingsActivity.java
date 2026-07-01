@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import tun.proxy.service.Tun2HttpVpnService;
 import tun.utils.ProgressTask;
 
 public class SettingsActivity extends AppCompatActivity implements
@@ -146,14 +147,14 @@ public enum FilterAppType {
         public static final String VPN_DISALLOWED_APPLICATION_LIST = "vpn_disallowed_application_list";
         public static final String VPN_ALLOWED_APPLICATION_LIST = "vpn_allowed_application_list";
         public static final String VPN_CLEAR_ALL_SELECTION = "vpn_dialog_clear_all_selection";
+        public static final String PREF_CONNECTIVITY_CHECK = Tun2HttpVpnService.PREF_CONNECTIVITY_CHECK;
 
         /*
          * DNS setting
          */
         public static final String DNS_USE_CUSTOM = "dns_use_custom";
         public static final String DNS_PRIMARY = "dns_primary";
-        public static final String DNS_SECONDARY = "dns_primary";
-
+        public static final String DNS_SECONDARY = "dns_secondary";
 
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -199,6 +200,7 @@ public enum FilterAppType {
             /*
              * DNS setting
              */
+
             final SwitchPreference prefUseDns = (SwitchPreference) this.findPreference(DNS_USE_CUSTOM);
             assert prefUseDns != null;
             prefUseDns.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
@@ -206,7 +208,7 @@ public enum FilterAppType {
                 public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     if (preference instanceof SwitchPreference) {
                         if (newValue instanceof Boolean) {
-                            MyApplication.getInstance().storeUseDnsCustom((Boolean)newValue);
+                            MyApplication.getInstance().storeUseDnsCustom((Boolean) newValue);
                         }
                     }
                     return true;
@@ -219,7 +221,7 @@ public enum FilterAppType {
                 public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     if (preference instanceof EditTextPreference) {
                         if (newValue instanceof String) {
-                            MyApplication.getInstance().storePrimaryDns((String)newValue);
+                            MyApplication.getInstance().storePrimaryDns((String) newValue);
                         }
                     }
                     return true;
@@ -232,7 +234,7 @@ public enum FilterAppType {
                 public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     if (preference instanceof EditTextPreference) {
                         if (newValue instanceof String) {
-                            MyApplication.getInstance().storeSecondaryDns((String)newValue);
+                            MyApplication.getInstance().storeSecondaryDns((String) newValue);
                         }
                     }
                     return true;
