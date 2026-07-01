@@ -120,7 +120,7 @@ The following are local proxy tools that can decrypt SSL.
   * https://www.telerik.com/fiddler
 
 * ZAP Proxy
-  * https://www.owasp.org/index.php/OWASP_Zed_Attack_Proxy_Project
+  * https://www.zaproxy.org/
 
 To decrypt SSL, install the local proxy tool Root certificate in the Android device user certificate.
 However, in Android 7.0 and later, the application no longer trusts user certificates by default.
