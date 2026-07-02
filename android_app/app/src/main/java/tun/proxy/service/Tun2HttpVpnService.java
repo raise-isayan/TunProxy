@@ -40,8 +40,6 @@ import tun.utils.Util;
 public class Tun2HttpVpnService extends VpnService {
     public static final String PREF_PROXY_HOST = "pref_proxy_host";
     public static final String PREF_PROXY_PORT = "pref_proxy_port";
-    public static final String PREF_CONNECTIVITY_CHECK = "pref_connectivity_check";
-    public static final String PREF_RUNNING = "pref_running";
     private static final String TAG = "Tun2Http.Service";
     private static final String ACTION_START = "start";
     private static final String ACTION_STOP = "stop";
@@ -178,7 +176,7 @@ public class Tun2HttpVpnService extends VpnService {
                 builder.addDnsServer(dns2);
             }
         } else {
-            List<String> dnsList = Util.getDefaultDNS(MyApplication.getInstance().getApplicationContext());
+            List<String> dnsList = Util.getDefaultDNS(app.getApplicationContext());
             for (String dns : dnsList) {
                 Log.i(TAG, "default DNS:" + dns);
                 builder.addDnsServer(dns);
@@ -200,14 +198,14 @@ public class Tun2HttpVpnService extends VpnService {
             List<String> notFoundPackageList = new ArrayList<>();
             builder.addDisallowedApplication(Arrays.asList(disallow.toArray(new String[0])), notFoundPackageList);
             disallow.removeAll(notFoundPackageList);
-            MyApplication.getInstance().storeVPNApplication(MyApplication.VPNMode.DISALLOW, disallow);
+            app.storeVPNApplication(MyApplication.VPNMode.DISALLOW, disallow);
         } else {
             Set<String> allow = app.loadVPNApplication(MyApplication.VPNMode.ALLOW);
             Log.d(TAG, "allowed:" + allow.size());
             List<String> notFoundPackageList = new ArrayList<>();
             builder.addAllowedApplication(Arrays.asList(allow.toArray(new String[0])), notFoundPackageList);
             allow.removeAll(notFoundPackageList);
-            MyApplication.getInstance().storeVPNApplication(MyApplication.VPNMode.ALLOW, allow);
+            app.storeVPNApplication(MyApplication.VPNMode.ALLOW, allow);
         }
 
         // Add list of allowed applications
@@ -220,8 +218,7 @@ public class Tun2HttpVpnService extends VpnService {
         int proxyPort = prefs.getInt(PREF_PROXY_PORT, 0);
         if (proxyPort != 0 && !TextUtils.isEmpty(proxyHost)) {
             jni_start(vpn.getFd(), false, 3, proxyHost, proxyPort);
-
-            prefs.edit().putBoolean(PREF_RUNNING, true).apply();
+            prefs.edit().putBoolean(MyApplication.PREF_RUNNING, true).apply();
         }
     }
 
@@ -236,7 +233,7 @@ public class Tun2HttpVpnService extends VpnService {
         }
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        prefs.edit().putBoolean(PREF_RUNNING, false).apply();
+        prefs.edit().putBoolean(MyApplication.PREF_RUNNING, false).apply();
     }
 
     private void stopVPN(ParcelFileDescriptor pfd) {

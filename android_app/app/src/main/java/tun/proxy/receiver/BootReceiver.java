@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 import android.net.VpnService;
 import androidx.preference.PreferenceManager;
 import android.util.Log;
+
+import tun.proxy.MyApplication;
 import tun.proxy.R;
 
 import tun.proxy.service.Tun2HttpVpnService;
@@ -20,7 +22,7 @@ public class BootReceiver extends BroadcastReceiver {
         }
 
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        boolean isRunning = prefs.getBoolean(Tun2HttpVpnService.PREF_RUNNING, false);
+        boolean isRunning = prefs.getBoolean(MyApplication.PREF_RUNNING, false);
         if (isRunning) {
             Intent prepare = VpnService.prepare(context);
             if (prepare == null) {

@@ -147,7 +147,7 @@ public enum FilterAppType {
         public static final String VPN_DISALLOWED_APPLICATION_LIST = "vpn_disallowed_application_list";
         public static final String VPN_ALLOWED_APPLICATION_LIST = "vpn_allowed_application_list";
         public static final String VPN_CLEAR_ALL_SELECTION = "vpn_dialog_clear_all_selection";
-        public static final String PREF_CONNECTIVITY_CHECK = Tun2HttpVpnService.PREF_CONNECTIVITY_CHECK;
+        public static final String PROXY_CONNECTIVITY_CHECK = "proxy_connectivity_check";
 
         /*
          * DNS setting
@@ -159,6 +159,9 @@ public enum FilterAppType {
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             addPreferencesFromResource(R.xml.preferences);
+
+            final MyApplication app = MyApplication.getInstance();
+            assert app != null;
 
             /*
              * VPN connection setting
@@ -188,7 +191,7 @@ public enum FilterAppType {
                         preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
 
                         MyApplication.VPNMode mode =  MyApplication.VPNMode.values()[index];
-                        MyApplication.getInstance().storeVPNMode(mode);
+                        app.storeVPNMode(mode);
                     }
                     return true;
                 }
@@ -196,6 +199,23 @@ public enum FilterAppType {
             prefVpnMode.setSummary(prefVpnMode.getEntry());
             prefDisallow.setEnabled(MyApplication.VPNMode.DISALLOW.name().equals(prefVpnMode.getValue()));
             prefAllow.setEnabled(MyApplication.VPNMode.ALLOW.name().equals(prefVpnMode.getValue()));
+
+            /*
+             * Proxy setting
+             */
+            final SwitchPreference prefConnectionChek = (SwitchPreference) this.findPreference(PROXY_CONNECTIVITY_CHECK);
+            assert prefConnectionChek != null;
+            prefConnectionChek.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
+                    if (preference instanceof SwitchPreference) {
+                        if (newValue instanceof Boolean) {
+                            app.storeConnectivityCheck((Boolean) newValue);
+                        }
+                    }
+                    return true;
+                }
+            });
 
             /*
              * DNS setting
@@ -208,7 +228,7 @@ public enum FilterAppType {
                 public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     if (preference instanceof SwitchPreference) {
                         if (newValue instanceof Boolean) {
-                            MyApplication.getInstance().storeUseDnsCustom((Boolean) newValue);
+                            app.storeUseDnsCustom((Boolean) newValue);
                         }
                     }
                     return true;
@@ -221,7 +241,7 @@ public enum FilterAppType {
                 public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     if (preference instanceof EditTextPreference) {
                         if (newValue instanceof String) {
-                            MyApplication.getInstance().storePrimaryDns((String) newValue);
+                            app.storePrimaryDns((String) newValue);
                         }
                     }
                     return true;
@@ -234,7 +254,7 @@ public enum FilterAppType {
                 public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     if (preference instanceof EditTextPreference) {
                         if (newValue instanceof String) {
-                            MyApplication.getInstance().storeSecondaryDns((String) newValue);
+                            app.storeSecondaryDns((String) newValue);
                         }
                     }
                     return true;
@@ -251,7 +271,7 @@ public enum FilterAppType {
             final PreferenceScreen prefAllow = (PreferenceScreen) findPreference(VPN_ALLOWED_APPLICATION_LIST);
             assert prefAllow != null;
 
-            MyApplication app = MyApplication.getInstance();
+            final MyApplication app = MyApplication.getInstance();
             assert app != null;
             int countDisallow = app.loadVPNApplication(MyApplication.VPNMode.DISALLOW).size();
             int countAllow = app.loadVPNApplication(MyApplication.VPNMode.ALLOW).size();
@@ -269,6 +289,9 @@ public enum FilterAppType {
         // リスナー部分
         @Override
         public boolean onPreferenceClick(Preference preference) {
+            final MyApplication app = MyApplication.getInstance();
+            assert app != null;
+
             // keyを見てクリックされたPreferenceを特定
             switch (preference.getKey()) {
                 case VPN_DISALLOWED_APPLICATION_LIST:
@@ -282,8 +305,8 @@ public enum FilterAppType {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 Set<String> set = new HashSet<>();
-                                MyApplication.getInstance().storeVPNApplication(MyApplication.VPNMode.ALLOW, set);
-                                MyApplication.getInstance().storeVPNApplication(MyApplication.VPNMode.DISALLOW, set);
+                                app.storeVPNApplication(MyApplication.VPNMode.ALLOW, set);
+                                app.storeVPNApplication(MyApplication.VPNMode.DISALLOW, set);
                                 updateMenuItem();
                             }
                         })
@@ -489,7 +512,7 @@ public enum FilterAppType {
                 this.task.cancel(true);
                 this.task = null;
             }
-            MyApplication app = MyApplication.getInstance();
+            final MyApplication app = MyApplication.getInstance();
             assert app != null;
             Set<String> selected = this.getAllSelectedPackageSet();
             storeSelectedPackageSet(selected);
@@ -505,7 +528,8 @@ public enum FilterAppType {
         @Override
         public void onResume() {
             super.onResume();
-            MyApplication app = MyApplication.getInstance();
+            final MyApplication app = MyApplication.getInstance();
+            assert app != null;
             Set<String> loadMap = app.loadVPNApplication(this.mode);
             for (String pkgName : loadMap) {
                 this.mAllPackageInfoMap.put(pkgName, loadMap.contains(pkgName));
@@ -642,10 +666,11 @@ public enum FilterAppType {
         }
 
         private void storeSelectedPackageSet(final Set<String> set) {
-            MyApplication.getInstance().storeVPNMode(this.mode);
-            MyApplication.getInstance().storeVPNApplication(this.mode, set);
+            final MyApplication app = MyApplication.getInstance();
+            assert app != null;
+            app.storeVPNMode(this.mode);
+            app.storeVPNApplication(this.mode, set);
         }
-
 
         @Override
         public boolean onQueryTextSubmit(String query) {
@@ -697,7 +722,9 @@ public enum FilterAppType {
         }
 
         private List<PackageInfo> filterPackages(String filter, final MyApplication.AppSortBy filterBy, final MyApplication.AppOrderBy orderBy, final MyApplication.AppSortBy sortBy, EnumSet<FilterAppType> filterAppType) {
-            final Context context = MyApplication.getInstance().getApplicationContext();
+            final MyApplication app = MyApplication.getInstance();
+            assert app != null;
+            final Context context = app.getApplicationContext();
             final PackageManager pm = context.getPackageManager();
             final List<PackageInfo> installedPackages = pm.getInstalledPackages(PackageManager.GET_META_DATA);
             Collections.sort(installedPackages, new Comparator<PackageInfo>() {
@@ -727,7 +754,7 @@ public enum FilterAppType {
             for (final PackageInfo pi : installedPackages) {
                 if (isCancelled()) continue;
                 // exclude self package
-                if (pi.packageName.equals(MyApplication.getInstance().getPackageName())) {
+                if (pi.packageName.equals(app.getPackageName())) {
                     continue;
                 }
                 // exclude system app
@@ -747,12 +774,14 @@ public enum FilterAppType {
 
         @Override
         protected void onPostExecute(List<PackageInfo> installedPackages) {
-            final Context context = MyApplication.getInstance().getApplicationContext();
+            final MyApplication app = MyApplication.getInstance();
+            assert app != null;
+            final Context context = app.getApplicationContext();
             final PackageManager pm = context.getPackageManager();
             packageFragment.mFilterPreferenceScreen.removeAll();
             for (final PackageInfo pi : installedPackages) {
                 // exclude self package
-                if (pi.packageName.equals(MyApplication.getInstance().getPackageName())) {
+                if (pi.packageName.equals(app.getPackageName())) {
                     continue;
                 }
                 // exclude system app

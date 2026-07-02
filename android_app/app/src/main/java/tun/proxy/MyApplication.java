@@ -23,7 +23,11 @@ public class MyApplication extends Application {
         instance = this;
     }
 
-        public VPNMode loadVPNMode() {
+    /*
+     * VPN connection setting
+     */
+
+    public VPNMode loadVPNMode() {
         final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         final String vpn_mode = sharedPreferences.getString(PREF_VPN_MODE, MyApplication.VPNMode.DISALLOW.name());
         return VPNMode.valueOf(vpn_mode);
@@ -56,6 +60,27 @@ public class MyApplication extends Application {
     public enum AppOrderBy {ASC, DESC}
 
     public enum AppFiltertBy {APPNAME, PKGNAME}
+
+    /*
+     * Proxy setting
+     */
+    public static final String PREF_PROXY_CONNECTIVITY_CHECK = "pref_proxy_connectivity_check";
+    public static final String PREF_RUNNING = "pref_proxy_running";
+
+    public boolean loadConnectivityCheck(boolean defValue) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        return prefs.getBoolean(PREF_PROXY_CONNECTIVITY_CHECK, defValue);
+    }
+
+    public void storeConnectivityCheck(boolean connectivity) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        final SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(PREF_PROXY_CONNECTIVITY_CHECK, connectivity).apply();
+    }
+
+    /*
+     * DNS setting
+     */
 
     private static final String PREF_DNS_USE_CUSTOM = "pref_dns_use_custom";
     public static final String PREF_DNS_PRIMARY = "pref_dns_primary";

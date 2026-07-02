@@ -201,8 +201,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startVpn() {
+        final MyApplication app = MyApplication.getInstance();
+        assert app != null;
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean connectivityCheck = prefs.getBoolean(Tun2HttpVpnService.PREF_CONNECTIVITY_CHECK, false);
+        boolean connectivityCheck = app.loadConnectivityCheck(false);
 
         if (connectivityCheck) {
             if (parseAndSaveHostPort()) {

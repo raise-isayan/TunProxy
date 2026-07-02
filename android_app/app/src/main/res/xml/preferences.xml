@@ -34,7 +34,7 @@
         android:key="proxy_setting"
         android:title="@string/proxy_setting">
         <SwitchPreference
-            android:key="pref_connectivity_check"
+            android:key="proxy_connectivity_check"
             android:title="@string/pref_connectivity_check"
             android:summary="@string/pref_connectivity_check_summary"
             android:defaultValue="false" />
