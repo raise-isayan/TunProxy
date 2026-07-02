@@ -19,7 +19,8 @@ import java.util.regex.Pattern;
 
 public class CertificateUtil {
     private static final String TAG = "CertificateManager";
-    private final static Pattern CA_COMMON_NAME = Pattern.compile("CN=([^,]+),?.*$");;
+    private final static Pattern CA_COMMON_NAME = Pattern.compile("CN=([^,]+),?.*$");
+    ;
     private final static Pattern CA_ORGANIZATION = Pattern.compile("O=([^,]+),?.*$");
 
     public static boolean findCAStore(String caName) {
@@ -40,7 +41,8 @@ public class CertificateUtil {
                     break;
                 }
             }
-        } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException e) {
+        } catch (IOException | KeyStoreException | NoSuchAlgorithmException |
+                 CertificateException e) {
             Log.e(TAG, e.getMessage(), e);
         }
         return found;
@@ -63,7 +65,8 @@ public class CertificateUtil {
                 System.out.println(alias + "/" + cert.getIssuerX500Principal().getName());
                 rootCAList.add(cert);
             }
-        } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException e) {
+        } catch (IOException | KeyStoreException | NoSuchAlgorithmException |
+                 CertificateException e) {
             Log.e(TAG, e.getMessage(), e);
         }
         return rootCAList;
@@ -94,9 +97,9 @@ public class CertificateUtil {
             Collections.sort(certList, new Comparator<X509Certificate>() {
                 @Override
                 public int compare(X509Certificate t1, X509Certificate t2) {
-                String t1cn = CertificateUtil.getCommonName(t1.getIssuerX500Principal().getName());
-                String t2cn = CertificateUtil.getCommonName(t2.getIssuerX500Principal().getName());
-                return t1cn.compareToIgnoreCase(t2cn);
+                    String t1cn = CertificateUtil.getCommonName(t1.getIssuerX500Principal().getName());
+                    String t2cn = CertificateUtil.getCommonName(t2.getIssuerX500Principal().getName());
+                    return t1cn.compareToIgnoreCase(t2cn);
                 }
             });
             // ソート後
@@ -111,7 +114,8 @@ public class CertificateUtil {
             }
             rootCAMap.put("entry", rootCANameList.toArray(new String[0]));
             rootCAMap.put("value", rootCAList.toArray(new String[0]));
-        } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException e) {
+        } catch (IOException | KeyStoreException | NoSuchAlgorithmException |
+                 CertificateException e) {
             Log.e(TAG, e.getMessage(), e);
         }
         return rootCAMap;
@@ -179,6 +183,6 @@ public class CertificateUtil {
         return on;
     }
 
-public enum CertificateInstallType {SYSTEM, USER}
+    public enum CertificateInstallType {SYSTEM, USER}
 
 }

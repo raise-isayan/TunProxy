@@ -5,7 +5,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.VpnService;
+
 import androidx.preference.PreferenceManager;
+
 import android.util.Log;
 
 import tun.proxy.MyApplication;
@@ -20,9 +22,9 @@ public class BootReceiver extends BroadcastReceiver {
         if (intent != null && !Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             return;
         }
-
-        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        boolean isRunning = prefs.getBoolean(MyApplication.PREF_RUNNING, false);
+        final MyApplication app = MyApplication.getInstance();
+        assert app != null;
+        boolean isRunning = app.loadProxyRunning(false);
         if (isRunning) {
             Intent prepare = VpnService.prepare(context);
             if (prepare == null) {

@@ -29,8 +29,7 @@ public class IPUtil {
         String[] ipParts = parts[0].split("\\.");
         if (ipParts.length != 4) {
             return false;
-        }
-        else {
+        } else {
             for (int i = 0; i < ipParts.length; i++) {
                 int ipPart = -1;
                 try {

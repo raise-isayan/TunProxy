@@ -42,7 +42,7 @@ public class AppInstrumentedTest {
 
         List<String> dnsList = Util.getDefaultDNS(appContext);
         System.out.println("dnsList:" + dnsList.size());
-        for (String dns: dnsList) {
+        for (String dns : dnsList) {
             System.out.println("dns:" + dns);
         }
 

@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
     );
     Handler statusHandler = new Handler(Looper.getMainLooper());
     private Tun2HttpVpnService service;
-    private ServiceConnection serviceConnection = new ServiceConnection() {
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder binder) {
             Tun2HttpVpnService.ServiceBinder serviceBinder = (Tun2HttpVpnService.ServiceBinder) binder;
             service = serviceBinder.getService();
@@ -123,14 +123,12 @@ public class MainActivity extends AppCompatActivity {
         if (item_id == R.id.action_activity_settings) {
             Intent intent = new android.content.Intent(this, SettingsActivity.class);
             startActivity(intent);
-        }
-        else if (item_id ==  R.id.action_show_about) {
+        } else if (item_id == R.id.action_show_about) {
             new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.app_name) + getVersionName())
-                .setMessage(R.string.app_name)
-                .show();
-        }
-        else {
+                    .setTitle(getString(R.string.app_name) + getVersionName())
+                    .setMessage(R.string.app_name)
+                    .show();
+        } else {
             return super.onOptionsItemSelected(item);
         }
         return true;
@@ -171,12 +169,14 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         statusHandler.removeCallbacks(statusRunnable);
         unbindService(serviceConnection);
-    }    Runnable statusRunnable = new Runnable() {
-            @Override
-            public void run() {
-                updateStatus();
-                statusHandler.post(statusRunnable);
-            }
+    }
+
+    Runnable statusRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateStatus();
+            statusHandler.post(statusRunnable);
+        }
     };
 
     void updateStatus() {
@@ -204,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
         final MyApplication app = MyApplication.getInstance();
         assert app != null;
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean connectivityCheck = app.loadConnectivityCheck(false);
+        boolean connectivityCheck = app.loadProxyConnectivityCheck(false);
 
         if (connectivityCheck) {
             if (parseAndSaveHostPort()) {

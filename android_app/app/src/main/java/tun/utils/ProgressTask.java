@@ -16,12 +16,12 @@ public abstract class ProgressTask<Params, Progress, Result> {
     private boolean canceled = false;
 
     public final ProgressTask.Status getStatus() {
-        return  mStatus;
+        return mStatus;
     }
 
     @SafeVarargs
     public final void execute(Params... params) {
-        try (ExecutorService executorService  = Executors.newSingleThreadExecutor()) {
+        try (ExecutorService executorService = Executors.newSingleThreadExecutor()) {
             executorService.submit(new ProgressRunnable(params));
         }
     }
@@ -46,13 +46,14 @@ public abstract class ProgressTask<Params, Progress, Result> {
     protected void onCancelled() {
     }
 
-    public enum Status { PENDING, RUNNING, FINISHED }
+    public enum Status {PENDING, RUNNING, FINISHED}
 
     private class ProgressRunnable implements Runnable {
 
-        final Params [] params;
+        final Params[] params;
         Handler handler = new Handler(Looper.getMainLooper());
         private Result result;
+
         @SafeVarargs
         public ProgressRunnable(Params... params) {
             this.params = params;

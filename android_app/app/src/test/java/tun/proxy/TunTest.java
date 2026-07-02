@@ -8,7 +8,6 @@ import java.util.EnumSet;
 
 import tun.utils.IPUtil;
 
-
 /**
  * Example local unit test, which will execute on the development machine (host).
  *
@@ -19,7 +18,7 @@ public class TunTest {
     public void testSettingsActivity() {
         EnumSet<SettingsActivity.FilterAppType> filterType = EnumSet.allOf(SettingsActivity.FilterAppType.class);
         System.out.println("FilterAppType:" + filterType.toString());
-        EnumSet<SettingsActivity.FilterAppType> result =  SettingsActivity.FilterAppType.parseEnumSet(filterType.toString());
+        EnumSet<SettingsActivity.FilterAppType> result = SettingsActivity.FilterAppType.parseEnumSet(filterType.toString());
         assertEquals(result, filterType);
     }
 }

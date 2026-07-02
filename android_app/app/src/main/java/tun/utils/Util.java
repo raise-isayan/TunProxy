@@ -42,7 +42,7 @@ public class Util {
                 LinkProperties lp = cm.getLinkProperties(an);
                 if (lp != null) {
                     List<InetAddress> dnsServices = lp.getDnsServers();
-                    for (InetAddress dns: dnsServices) {
+                    for (InetAddress dns : dnsServices) {
                         listDns.add(dns.getHostAddress());
                     }
                 }

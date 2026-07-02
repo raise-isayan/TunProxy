@@ -166,7 +166,7 @@ public class Tun2HttpVpnService extends VpnService {
         assert app != null;
         if (app.loadUseDnsCustom()) {
             String dns1 = app.loadPrimaryDns("8.8.8.8");
-            String dns2 = app.loadSecondaryDns("8.8.4.4");;
+            String dns2 = app.loadSecondaryDns("8.8.4.4");
             if (!TextUtils.isEmpty(dns1)) {
                 Log.i(TAG, "custom primary DNS:" + dns1);
                 builder.addDnsServer(dns1);
@@ -218,7 +218,9 @@ public class Tun2HttpVpnService extends VpnService {
         int proxyPort = prefs.getInt(PREF_PROXY_PORT, 0);
         if (proxyPort != 0 && !TextUtils.isEmpty(proxyHost)) {
             jni_start(vpn.getFd(), false, 3, proxyHost, proxyPort);
-            prefs.edit().putBoolean(MyApplication.PREF_RUNNING, true).apply();
+            MyApplication app = (MyApplication) this.getApplication();
+            assert app != null;
+            app.storeProxyRunning(true);
         }
     }
 
@@ -233,7 +235,9 @@ public class Tun2HttpVpnService extends VpnService {
         }
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        prefs.edit().putBoolean(MyApplication.PREF_RUNNING, false).apply();
+        MyApplication app = (MyApplication) this.getApplication();
+        assert app != null;
+        app.storeProxyRunning(false);
     }
 
     private void stopVPN(ParcelFileDescriptor pfd) {

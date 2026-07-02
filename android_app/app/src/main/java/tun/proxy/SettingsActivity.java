@@ -1,6 +1,5 @@
 package tun.proxy;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -10,8 +9,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 //import android.os.AsyncTask;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
+
 import androidx.activity.EdgeToEdge;
 import androidx.activity.SystemBarStyle;
 import androidx.annotation.NonNull;
@@ -41,10 +40,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
-import tun.proxy.service.Tun2HttpVpnService;
 import tun.utils.ProgressTask;
 
 public class SettingsActivity extends AppCompatActivity implements
@@ -64,25 +61,27 @@ public class SettingsActivity extends AppCompatActivity implements
         });
         if (savedInstanceState == null) {
             getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.activity_settings, new SettingsFragment(), "preference_root")
-                .commit();
+                    .beginTransaction()
+                    .replace(R.id.activity_settings, new SettingsFragment(), "preference_root")
+                    .commit();
         } else {
             setTitle(savedInstanceState.getCharSequence(TITLE_TAG));
         }
         getSupportFragmentManager().addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
             @Override
             public void onBackStackChanged() {
-            if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
-                setTitle(R.string.title_activity_settings);
-            }
+                if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
+                    setTitle(R.string.title_activity_settings);
+                }
             }
         });
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
-    };
+    }
+
+    ;
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
@@ -112,7 +111,7 @@ public class SettingsActivity extends AppCompatActivity implements
         return true;
     }
 
-public enum FilterAppType {
+    public enum FilterAppType {
         SYSTEM_APP,
         OS_APP;
 
@@ -190,7 +189,7 @@ public enum FilterAppType {
                         // Set the summary to reflect the new value.
                         preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
 
-                        MyApplication.VPNMode mode =  MyApplication.VPNMode.values()[index];
+                        MyApplication.VPNMode mode = MyApplication.VPNMode.values()[index];
                         app.storeVPNMode(mode);
                     }
                     return true;
@@ -210,7 +209,7 @@ public enum FilterAppType {
                 public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     if (preference instanceof SwitchPreference) {
                         if (newValue instanceof Boolean) {
-                            app.storeConnectivityCheck((Boolean) newValue);
+                            app.storeProxyConnectivityCheck((Boolean) newValue);
                         }
                     }
                     return true;
@@ -299,19 +298,19 @@ public enum FilterAppType {
                     break;
                 case VPN_CLEAR_ALL_SELECTION:
                     new AlertDialog.Builder(requireActivity())
-                        .setTitle(getString(R.string.title_activity_settings))
-                        .setMessage(getString(R.string.vpn_dialog_clear_all_application_msg))
-                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                Set<String> set = new HashSet<>();
-                                app.storeVPNApplication(MyApplication.VPNMode.ALLOW, set);
-                                app.storeVPNApplication(MyApplication.VPNMode.DISALLOW, set);
-                                updateMenuItem();
-                            }
-                        })
-                        .setNegativeButton("Cancel", null)
-                        .show();
+                            .setTitle(getString(R.string.title_activity_settings))
+                            .setMessage(getString(R.string.vpn_dialog_clear_all_application_msg))
+                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    Set<String> set = new HashSet<>();
+                                    app.storeVPNApplication(MyApplication.VPNMode.ALLOW, set);
+                                    app.storeVPNApplication(MyApplication.VPNMode.DISALLOW, set);
+                                    updateMenuItem();
+                                }
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .show();
                     break;
             }
             return false;
@@ -325,7 +324,7 @@ public enum FilterAppType {
         }
     }
 
-    public static class AllowedPackageListFragment extends PackageListFragment  {
+    public static class AllowedPackageListFragment extends PackageListFragment {
         public AllowedPackageListFragment() {
             super(MyApplication.VPNMode.ALLOW);
         }
@@ -426,46 +425,38 @@ public enum FilterAppType {
                     if (item_id == android.R.id.home) {
                         startActivity(new Intent(getActivity(), SettingsActivity.class));
                         return true;
-                    }
-                    else if (item_id == R.id.menu_filter_app_system) {
+                    } else if (item_id == R.id.menu_filter_app_system) {
                         item.setChecked(!item.isChecked());
                         if (item.isChecked()) {
                             filterAppType.add(FilterAppType.SYSTEM_APP);
-                        }
-                        else {
+                        } else {
                             filterAppType.remove(FilterAppType.SYSTEM_APP);
                         }
                         filter(null, appFilterBy, MyApplication.AppOrderBy.ASC, appSortBy, filterAppType);
                         return true;
-                    }
-                    else if (item_id == R.id.menu_sort_order_asc) {
+                    } else if (item_id == R.id.menu_sort_order_asc) {
                         item.setChecked(!item.isChecked());
                         filter(null, appFilterBy, MyApplication.AppOrderBy.ASC, appSortBy, filterAppType);
                         return true;
-                    }
-                    else if (item_id == R.id.menu_sort_order_desc) {
+                    } else if (item_id == R.id.menu_sort_order_desc) {
                         item.setChecked(!item.isChecked());
                         filter(null, appFilterBy, MyApplication.AppOrderBy.DESC, appSortBy, filterAppType);
                         return true;
-                    }
-                    else if (item_id == R.id.menu_filter_app_name) {
+                    } else if (item_id == R.id.menu_filter_app_name) {
                         item.setChecked(!item.isChecked());
                         appFilterBy = MyApplication.AppSortBy.APPNAME;
                         filter(null, appFilterBy, appOrderBy, MyApplication.AppSortBy.APPNAME, filterAppType);
                         return true;
-                    }
-                    else if (item_id == R.id.menu_filter_pkg_name) {
+                    } else if (item_id == R.id.menu_filter_pkg_name) {
                         item.setChecked(!item.isChecked());
                         appFilterBy = MyApplication.AppSortBy.PKGNAME;
                         filter(null, appFilterBy, appOrderBy, MyApplication.AppSortBy.PKGNAME, filterAppType);
                         return true;
-                    }
-                    else if (item_id == R.id.menu_sort_app_name) {
+                    } else if (item_id == R.id.menu_sort_app_name) {
                         item.setChecked(!item.isChecked());
                         filter(null, appFilterBy, appOrderBy, MyApplication.AppSortBy.APPNAME, filterAppType);
                         return true;
-                    }
-                    else if (item_id == R.id.menu_sort_pkg_name) {
+                    } else if (item_id == R.id.menu_sort_pkg_name) {
                         item.setChecked(!item.isChecked());
                         filter(null, appFilterBy, appOrderBy, MyApplication.AppSortBy.PKGNAME, filterAppType);
                         return true;
@@ -497,8 +488,7 @@ public enum FilterAppType {
 
             if (task != null && task.getStatus() == ProgressTask.Status.PENDING) {
                 task.execute();
-            }
-            else {
+            } else {
                 task = new AsyncTaskProgress(this);
                 task.execute();
             }
@@ -611,8 +601,8 @@ public enum FilterAppType {
             Preference.OnPreferenceClickListener click = new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
-                mAllPackageInfoMap.put(prefCheck.getSummary().toString(), prefCheck.isChecked());
-                return false;
+                    mAllPackageInfoMap.put(prefCheck.getSummary().toString(), prefCheck.isChecked());
+                    return false;
                 }
             };
             prefCheck.setOnPreferenceClickListener(click);
@@ -699,10 +689,10 @@ public enum FilterAppType {
     }
 
     /*
-    * AsyncTask
-    * https://developer.android.com/reference/android/os/AsyncTask
-    * Deprecated in API level R
-    * */
+     * AsyncTask
+     * https://developer.android.com/reference/android/os/AsyncTask
+     * Deprecated in API level R
+     * */
     public static class AsyncTaskProgress extends ProgressTask<String, String, List<PackageInfo>> {
 
         final PackageListFragment packageFragment;
@@ -819,7 +809,7 @@ public enum FilterAppType {
     }
 
     protected static class ProgressPreference extends Preference {
-        public ProgressPreference(Context context){
+        public ProgressPreference(Context context) {
             super(context);
             setLayoutResource(R.layout.preference_progress);
         }

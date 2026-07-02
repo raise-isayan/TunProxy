@@ -2,6 +2,7 @@ package tun.proxy;
 
 import android.app.Application;
 import android.content.SharedPreferences;
+
 import androidx.preference.PreferenceManager;
 
 import java.util.HashSet;
@@ -31,27 +32,35 @@ public class MyApplication extends Application {
         final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         final String vpn_mode = sharedPreferences.getString(PREF_VPN_MODE, MyApplication.VPNMode.DISALLOW.name());
         return VPNMode.valueOf(vpn_mode);
-    };
+    }
+
+    ;
 
     public void storeVPNMode(VPNMode mode) {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         final SharedPreferences.Editor editor = prefs.edit();
         editor.putString(PREF_VPN_MODE, mode.name()).apply();
         return;
-    };
+    }
+
+    ;
 
     public Set<String> loadVPNApplication(VPNMode mode) {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         final Set<String> preference = prefs.getStringSet(PREF_APP_KEY[mode.ordinal()], new HashSet<String>());
         return preference;
-    };
+    }
+
+    ;
 
     public void storeVPNApplication(VPNMode mode, final Set<String> set) {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         final SharedPreferences.Editor editor = prefs.edit();
         editor.putStringSet(PREF_APP_KEY[mode.ordinal()], set).apply();
         return;
-    };
+    }
+
+    ;
 
     public enum VPNMode {DISALLOW, ALLOW}
 
@@ -67,15 +76,26 @@ public class MyApplication extends Application {
     public static final String PREF_PROXY_CONNECTIVITY_CHECK = "pref_proxy_connectivity_check";
     public static final String PREF_RUNNING = "pref_proxy_running";
 
-    public boolean loadConnectivityCheck(boolean defValue) {
+    public boolean loadProxyConnectivityCheck(boolean defValue) {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         return prefs.getBoolean(PREF_PROXY_CONNECTIVITY_CHECK, defValue);
     }
 
-    public void storeConnectivityCheck(boolean connectivity) {
+    public void storeProxyConnectivityCheck(boolean connectivity) {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         final SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean(PREF_PROXY_CONNECTIVITY_CHECK, connectivity).apply();
+    }
+
+    public boolean loadProxyRunning(boolean defValue) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        return prefs.getBoolean(PREF_RUNNING, defValue);
+    }
+
+    public void storeProxyRunning(boolean running) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        final SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(PREF_RUNNING, running).apply();
     }
 
     /*

@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
 public class IPUtilTest {
     @Test
     public void testIsValidIPv4Address() {
-        assertEquals(IPUtil.isValidIPv4Address(""), false);
+        assertEquals(false, IPUtil.isValidIPv4Address(""));
         assertEquals(IPUtil.isValidIPv4Address("127.0.0.1"), true);
         // 1 <= port <= 65535
         assertEquals(IPUtil.isValidIPv4Address("127.0.0.1:0"), false);
