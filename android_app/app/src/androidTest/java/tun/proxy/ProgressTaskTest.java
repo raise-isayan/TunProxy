@@ -44,20 +44,17 @@ public class ProgressTaskTest {
                         Thread.sleep(10);
                         Log.d(TAG, "Progress:" + i);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        Log.e(TAG, e.getMessage(), e);
                     }
                 }
                 return null;
             }
 
         };
-
-        Assert.assertEquals(task.getStatus(), ProgressTask.Status.PENDING);
+        Assert.assertEquals(ProgressTask.Status.PENDING, task.getStatus());
         Log.w(TAG, "progressTask: execute");
         task.execute();
-        Assert.assertEquals(task.getStatus(), ProgressTask.Status.RUNNING);
-
+        Assert.assertEquals(ProgressTask.Status.RUNNING, task.getStatus());
         Log.w(TAG, "progressTask: end");
-
     }
 }

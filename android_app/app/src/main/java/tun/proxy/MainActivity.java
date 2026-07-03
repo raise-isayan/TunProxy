@@ -44,9 +44,10 @@ import tun.proxy.service.Tun2HttpVpnService;
 import tun.utils.IPUtil;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
 
-    Button start;
-    Button stop;
+    Button startButton;
+    Button stopButton;
     EditText hostEditText;
     Spinner proxyTypeSpinner;
     private final ActivityResultLauncher<Intent> vpnRequestLauncher = registerForActivityResult(
@@ -83,8 +84,8 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        start = findViewById(R.id.start);
-        stop = findViewById(R.id.stop);
+        startButton = findViewById(R.id.start);
+        stopButton = findViewById(R.id.stop);
         hostEditText = findViewById(R.id.host);
         proxyTypeSpinner = findViewById(R.id.proxy_type);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
@@ -92,23 +93,21 @@ public class MainActivity extends AppCompatActivity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         proxyTypeSpinner.setAdapter(adapter);
 
-        start.setOnClickListener(new View.OnClickListener() {
+        startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startVpn();
             }
         });
-        stop.setOnClickListener(new View.OnClickListener() {
+        stopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 stopVpn();
             }
         });
-        start.setEnabled(true);
-        stop.setEnabled(false);
-
+        startButton.setEnabled(true);
+        stopButton.setEnabled(false);
         loadHostPort();
-
     }
 
     @Override
@@ -121,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem item = menu.findItem(R.id.action_activity_settings);
-        item.setEnabled(start.isEnabled());
+        item.setEnabled(startButton.isEnabled());
         return true;
     }
 
@@ -158,8 +157,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        start.setEnabled(false);
-        stop.setEnabled(false);
+        startButton.setEnabled(false);
+        stopButton.setEnabled(false);
         updateStatus();
 
         statusHandler.post(statusRunnable);
@@ -192,21 +191,21 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         if (isRunning()) {
-            start.setEnabled(false);
+            startButton.setEnabled(false);
             hostEditText.setEnabled(false);
             proxyTypeSpinner.setEnabled(false);
-            stop.setEnabled(true);
+            stopButton.setEnabled(true);
         } else {
-            start.setEnabled(true);
+            startButton.setEnabled(true);
             hostEditText.setEnabled(true);
             proxyTypeSpinner.setEnabled(true);
-            stop.setEnabled(false);
+            stopButton.setEnabled(false);
         }
     }
 
     private void stopVpn() {
-        start.setEnabled(true);
-        stop.setEnabled(false);
+        startButton.setEnabled(true);
+        stopButton.setEnabled(false);
         Tun2HttpVpnService.stop(this);
     }
 
@@ -225,10 +224,10 @@ public class MainActivity extends AppCompatActivity {
                     boolean reachable = false;
                     if (service != null && service.isNetworkConnected()) {
                         try (Socket socket = new Socket()) {
-                            socket.connect(new InetSocketAddress(host, port), 3000);
+                            socket.connect(new InetSocketAddress(host, port), 2000);
                             reachable = true;
                         } catch (Exception e) {
-                            Log.e("MainActivity", "Reachability check failed: " + e.getMessage());
+                            Log.e(TAG, "Reachability check failed: " + e.getMessage());
                         }
                     }
 
@@ -259,8 +258,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void vpnPrepared() {
-        start.setEnabled(false);
-        stop.setEnabled(true);
+        startButton.setEnabled(false);
+        stopButton.setEnabled(true);
         Tun2HttpVpnService.start(this);
     }
 
@@ -268,17 +267,15 @@ public class MainActivity extends AppCompatActivity {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         final String proxyHost = prefs.getString(Tun2HttpVpnService.PREF_PROXY_HOST, "");
         int proxyPort = prefs.getInt(Tun2HttpVpnService.PREF_PROXY_PORT, 0);
-        String proxyType = prefs.getString(Tun2HttpVpnService.PREF_PROXY_TYPE, "HTTP");
+        String proxyTypeName = prefs.getString(Tun2HttpVpnService.PREF_PROXY_TYPE, MyApplication.ProxyType.HTTP.name());
+        MyApplication.ProxyType proxyType = Enum.valueOf(MyApplication.ProxyType.class, proxyTypeName);
 
         if (TextUtils.isEmpty(proxyHost)) {
             return;
         }
         hostEditText.setText(proxyHost + ":" + proxyPort);
-        if ("SOCKS5".equals(proxyType)) {
-            proxyTypeSpinner.setSelection(1);
-        } else {
-            proxyTypeSpinner.setSelection(0);
-        }
+        proxyTypeSpinner.setSelection(proxyType.ordinal());
+
     }
 
     private boolean parseAndSaveHostPort() {
