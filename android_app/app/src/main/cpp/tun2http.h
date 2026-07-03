@@ -56,6 +56,8 @@
 #define TCP_CONNECT_NOT_SENT -1
 #define TCP_CONNECT_SENT 0
 #define TCP_CONNECT_ESTABLISHED 1
+#define SOCKS5_STATE_GREETING 2
+#define SOCKS5_STATE_CONNECT  3
 
 #define MTU 10000
 
@@ -67,6 +69,7 @@ struct arguments {
     jint rcode;
     char proxyIp[128];
     int proxyPort;
+    jboolean isSocks5;
 };
 
 struct allowed {
@@ -170,6 +173,7 @@ struct tcp_session {
 
     char hostname[512];
     int connect_sent;
+    uint8_t socks5_state;
     uint8_t is_http;
     uint8_t is_tls;
 };

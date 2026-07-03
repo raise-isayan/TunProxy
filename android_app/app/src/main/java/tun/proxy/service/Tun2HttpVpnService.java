@@ -40,6 +40,7 @@ import tun.utils.Util;
 public class Tun2HttpVpnService extends VpnService {
     public static final String PREF_PROXY_HOST = "pref_proxy_host";
     public static final String PREF_PROXY_PORT = "pref_proxy_port";
+    public static final String PREF_PROXY_TYPE = "pref_proxy_type";
     private static final String TAG = "Tun2Http.Service";
     private static final String ACTION_START = "start";
     private static final String ACTION_STOP = "stop";
@@ -74,7 +75,7 @@ public class Tun2HttpVpnService extends VpnService {
 
     private native void jni_init();
 
-    private native void jni_start(int tun, boolean fwd53, int rcode, String proxyIp, int proxyPort);
+    private native void jni_start(int tun, boolean fwd53, int rcode, String proxyIp, int proxyPort, boolean isSocks5);
 
     private native void jni_stop(int tun);
 
@@ -216,8 +217,11 @@ public class Tun2HttpVpnService extends VpnService {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String proxyHost = prefs.getString(PREF_PROXY_HOST, "");
         int proxyPort = prefs.getInt(PREF_PROXY_PORT, 0);
+        String proxyType = prefs.getString(PREF_PROXY_TYPE, "HTTP");
+        boolean isSocks5 = "SOCKS5".equals(proxyType);
+
         if (proxyPort != 0 && !TextUtils.isEmpty(proxyHost)) {
-            jni_start(vpn.getFd(), false, 3, proxyHost, proxyPort);
+            jni_start(vpn.getFd(), false, 3, proxyHost, proxyPort, isSocks5);
             MyApplication app = (MyApplication) this.getApplication();
             assert app != null;
             app.storeProxyRunning(true);

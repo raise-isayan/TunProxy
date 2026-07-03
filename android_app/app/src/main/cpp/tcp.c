@@ -286,23 +286,68 @@ void check_tcp_socket(const struct arguments *args,
         if (s->tcp.state == TCP_LISTEN) {
             // Check socket connect
             if (ev->events & EPOLLIN) {
-                char buffer[512];
-                ssize_t bytes = recv(s->socket, buffer, 12, 0);
-                if (bytes < 0) {
-                    log_android(ANDROID_LOG_ERROR, "%s recv SOCKS5 error %d: %s",
+                uint8_t buffer[512];
+                ssize_t bytes = recv(s->socket, buffer, sizeof(buffer), 0);
+                if (bytes <= 0) {
+                    log_android(ANDROID_LOG_ERROR, "%s recv error %d: %s",
                                 session, errno, strerror(errno));
                     write_rst(args, &s->tcp);
+                } else if (args->isSocks5) {
+                    if (s->tcp.socks5_state == SOCKS5_STATE_GREETING) {
+                        if (bytes >= 2 && buffer[0] == 0x05 && buffer[1] == 0x00) {
+                            uint8_t request[1024];
+                            int reqlen = 0;
+                            request[reqlen++] = 0x05; // VER
+                            request[reqlen++] = 0x01; // CMD
+                            request[reqlen++] = 0x00; // RSV
+                            if (s->tcp.hostname[0] != 0) {
+                                request[reqlen++] = 0x03; // ATYP: DOMAINNAME
+                                uint8_t hostlen = (uint8_t) strlen(s->tcp.hostname);
+                                request[reqlen++] = hostlen;
+                                memcpy(request + reqlen, s->tcp.hostname, hostlen);
+                                reqlen += hostlen;
+                            } else {
+                                request[reqlen++] = 0x01; // ATYP: IPv4
+                                memcpy(request + reqlen, &s->tcp.daddr.ip4, 4);
+                                reqlen += 4;
+                            }
+                            memcpy(request + reqlen, &s->tcp.dest, 2);
+                            reqlen += 2;
+
+                            if (send(s->socket, request, (size_t) reqlen, MSG_NOSIGNAL) != reqlen) {
+                                log_android(ANDROID_LOG_ERROR, "%s SOCKS5 connect send error %d: %s",
+                                            session, errno, strerror(errno));
+                                write_rst(args, &s->tcp);
+                            } else {
+                                s->tcp.socks5_state = SOCKS5_STATE_CONNECT;
+                            }
+                        } else {
+                            log_android(ANDROID_LOG_ERROR, "%s SOCKS5 greeting failed", session);
+                            write_rst(args, &s->tcp);
+                        }
+                    } else if (s->tcp.socks5_state == SOCKS5_STATE_CONNECT) {
+                        if (bytes >= 10 && buffer[0] == 0x05 && buffer[1] == 0x00) {
+                            s->tcp.connect_sent = TCP_CONNECT_ESTABLISHED;
+                            s->tcp.state = TCP_SYN_RECV;
+                        } else {
+                            log_android(ANDROID_LOG_ERROR, "%s SOCKS5 connect failed", session);
+                            write_rst(args, &s->tcp);
+                        }
+                    }
                 } else {
                     if (s->tcp.connect_sent == TCP_CONNECT_SENT) {
                         buffer[bytes] = '\0';
+                        if (strstr((char *) buffer, "HTTP/1.0 200") != NULL ||
+                            strstr((char *) buffer, "HTTP/1.1 200") != NULL) {
                             s->tcp.connect_sent = TCP_CONNECT_ESTABLISHED;
-                            while (recv(s->socket, buffer, sizeof(buffer), 0) > 0) {}
                             s->tcp.state = TCP_SYN_RECV;
                         } else {
+                            log_android(ANDROID_LOG_ERROR, "%s HTTP CONNECT failed: %s", session, buffer);
                             write_rst(args, &s->tcp);
-                        }                        if (strcmp(buffer, "HTTP/1.0 200") == 0 || strcmp(buffer, "HTTP/1.1 200") == 0) {
-
                         }
+                    } else {
+                        write_rst(args, &s->tcp);
+                    }
                 }
             } else {
                 s->tcp.remote_seq++; // remote SYN
@@ -331,7 +376,7 @@ void check_tcp_socket(const struct arguments *args,
                     size_t len = s->tcp.forward->len - s->tcp.forward->sent;
                     size_t newlen = len;
                     uint8_t *new_data = 0;
-                    if (s->tcp.is_http) {
+                    if (!args->isSocks5 && s->tcp.is_http) {
                         new_data = patch_http_url(data, &newlen);
                         if (new_data) {
                             data = new_data;
@@ -755,7 +800,19 @@ jboolean handle_tcp(const struct arguments *args,
             }
 
             if (cur->tcp.connect_sent == TCP_CONNECT_NOT_SENT && datalen > 0) {
-                if (is_tls || rport == 443 || (!is_http && rport != 80)) {
+                if (args->isSocks5) {
+                    uint8_t greeting[] = {0x05, 0x01, 0x00};
+                    ssize_t sent = send(cur->socket, greeting, sizeof(greeting), MSG_NOSIGNAL);
+                    if (sent < 0) {
+                        log_android(ANDROID_LOG_ERROR, "%s SOCKS5 greeting send error %d: %s",
+                                    packet, errno, strerror(errno));
+                        write_rst(args, &cur->tcp);
+                    } else {
+                        cur->tcp.connect_sent = TCP_CONNECT_SENT;
+                        cur->tcp.socks5_state = SOCKS5_STATE_GREETING;
+                        cur->tcp.state = TCP_LISTEN;
+                    }
+                } else if (is_tls || rport == 443 || (!is_http && rport != 80)) {
                     if (cur->tcp.hostname[0] != 0) {
                         char buffer[512];
                         sprintf(buffer, "CONNECT %s:%d HTTP/1.0\r\n\r\n", cur->tcp.hostname, rport);

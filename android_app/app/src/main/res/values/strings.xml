@@ -49,6 +49,10 @@
     <string name="proxy_setting">Proxy Setting</string>
     <string name="pref_connectivity_check">Connectivity Check</string>
     <string name="pref_connectivity_check_summary">Check proxy connectivity before starting</string>
+    <string-array name="proxy_types">
+        <item>HTTP</item>
+        <item>SOCKS5</item>
+    </string-array>
 
     <!-- DNS Setting -->
     <string name="dns_setting">DNS Setting</string>

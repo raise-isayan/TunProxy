@@ -31,8 +31,10 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import java.net.InetSocketAddress;
@@ -46,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     Button start;
     Button stop;
     EditText hostEditText;
+    Spinner proxyTypeSpinner;
     private final ActivityResultLauncher<Intent> vpnRequestLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -83,6 +86,11 @@ public class MainActivity extends AppCompatActivity {
         start = findViewById(R.id.start);
         stop = findViewById(R.id.stop);
         hostEditText = findViewById(R.id.host);
+        proxyTypeSpinner = findViewById(R.id.proxy_type);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.proxy_types, R.layout.spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        proxyTypeSpinner.setAdapter(adapter);
 
         start.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -186,10 +194,12 @@ public class MainActivity extends AppCompatActivity {
         if (isRunning()) {
             start.setEnabled(false);
             hostEditText.setEnabled(false);
+            proxyTypeSpinner.setEnabled(false);
             stop.setEnabled(true);
         } else {
             start.setEnabled(true);
             hostEditText.setEnabled(true);
+            proxyTypeSpinner.setEnabled(true);
             stop.setEnabled(false);
         }
     }
@@ -258,11 +268,17 @@ public class MainActivity extends AppCompatActivity {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         final String proxyHost = prefs.getString(Tun2HttpVpnService.PREF_PROXY_HOST, "");
         int proxyPort = prefs.getInt(Tun2HttpVpnService.PREF_PROXY_PORT, 0);
+        String proxyType = prefs.getString(Tun2HttpVpnService.PREF_PROXY_TYPE, "HTTP");
 
         if (TextUtils.isEmpty(proxyHost)) {
             return;
         }
         hostEditText.setText(proxyHost + ":" + proxyPort);
+        if ("SOCKS5".equals(proxyType)) {
+            proxyTypeSpinner.setSelection(1);
+        } else {
+            proxyTypeSpinner.setSelection(0);
+        }
     }
 
     private boolean parseAndSaveHostPort() {
@@ -283,10 +299,13 @@ public class MainActivity extends AppCompatActivity {
         }
         String[] ipParts = parts[0].split("\\.");
         String host = parts[0];
+        String proxyType = (String) proxyTypeSpinner.getSelectedItem();
+
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor edit = prefs.edit();
         edit.putString(Tun2HttpVpnService.PREF_PROXY_HOST, host);
         edit.putInt(Tun2HttpVpnService.PREF_PROXY_PORT, port);
+        edit.putString(Tun2HttpVpnService.PREF_PROXY_TYPE, proxyType);
         edit.apply();
         return true;
     }
