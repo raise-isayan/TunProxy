@@ -14,9 +14,16 @@ TunProxyアプリを起動すると以下の画面が起動します。
 
 ![Tun Proxy](images/TunProxy.png)
 
-* Proxy address (ipv4:port)
+* Proxy address (IPv4:port)
   * 接続先のプロキシサーバを **IPv4アドレス:ポート番号** の形式で指定します。
      IPアドレスはIPv4形式で記載する必要があります。
+
+* Proxy Type
+  * HTTP
+     HTTPプロキシとして接続します。
+  * SOCKS5
+     SOCKS5プロキシとして接続します。
+
 
 * [Start] ボタン
   * 接続を開始します。
