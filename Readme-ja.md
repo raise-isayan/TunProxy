@@ -92,6 +92,9 @@ Disallowed Application と Allowed Application の２つのモードがありま
 * package name
   * パッケージ名に指定したキーワードを含むものを検索します。
 
+## Proxy setting
+  有効な場合、開始する前にプロキシの接続状態を確認します。
+
 ## DNS setting
 
 DNSサーバの設定を行います。
@@ -106,6 +109,7 @@ DNSサーバの設定を行います。
   * セカンダリDNSを指定します。
 
 ## About
+
 アプリケーションバージョンを表示します。
 
 ## MITM (SSL 復号化)

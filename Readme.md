@@ -90,6 +90,9 @@ Changed the way the application list is displayed.
 * package name
   * Search for the package name that contains the keyword you specified.
 
+## Proxy setting
+  Check proxy connectivity before starting
+
 ## DNS setting
 
 Configure the DNS server settings.
@@ -104,6 +107,7 @@ Configure the DNS server settings.
   * Specify the secondary DNS server.
 
 ## About
+
 Display application version
 
 ## MITM (SSL decrypt)
