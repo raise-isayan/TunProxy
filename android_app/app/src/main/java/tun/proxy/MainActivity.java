@@ -282,12 +282,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean parseAndSaveHostPort() {
-        String hostPort = hostEditText.getText().toString();
-        if (!IPUtil.isValidIPv4Address(hostPort)) {
+        String proxyTarget = hostEditText.getText().toString();
+        if (!IPUtil.isValidIPv4Address(proxyTarget)) {
             hostEditText.setError(getString(R.string.enter_host));
             return false;
         }
-        String parts[] = hostPort.split(":");
+        // IPv4:port 分離
+        String parts[] = proxyTarget.split(":");
         int port = 0;
         if (parts.length > 1) {
             try {

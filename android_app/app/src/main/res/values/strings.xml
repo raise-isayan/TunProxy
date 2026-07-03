@@ -8,7 +8,7 @@
     <string name="stop">Stop</string>
     <string name="msg_start_failed">Start failed</string>
     <string name="host_hint">Proxy address (ipv4:port)</string>
-    <string name="enter_host">Enter valid ip v4 address</string>
+    <string name="enter_host">Enter valid IPv4 address and port</string>
 
     <!-- Main menu -->
     <string name="title_show_about">About</string>
@@ -25,6 +25,7 @@
     <string name="menu_order_by_desc">descending</string>
     <string name="menu_filter_by">filter by</string>
     <string name="loading">Please wait</string>
+    <string name="progress">Progress</string>
 
     <!-- VPN Setting -->
     <string name="vpn_connection_setting">VPN connection setting</string>

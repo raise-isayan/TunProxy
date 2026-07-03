@@ -14,17 +14,18 @@ public class IPUtil {
         if (address.isEmpty()) {
             return false;
         }
-        String parts[] = address.split(":");
+        String [] parts = address.split(":");
+        if (parts.length != 2) {
+            return false;
+        }
         int port = 0;
-        if (parts.length > 1) {
-            try {
-                port = Integer.parseInt(parts[1]);
-            } catch (NumberFormatException e) {
-                return false;
-            }
-            if (!(0 < port && port < 65536)) {
-                return false;
-            }
+        try {
+            port = Integer.parseInt(parts[1]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        if (!(0 < port && port < 65536)) {
+            return false;
         }
         String[] ipParts = parts[0].split("\\.");
         if (ipParts.length != 4) {

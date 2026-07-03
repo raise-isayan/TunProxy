@@ -14,18 +14,19 @@ import static org.junit.Assert.*;
 public class IPUtilTest {
     @Test
     public void testIsValidIPv4Address() {
-        assertEquals(false, IPUtil.isValidIPv4Address(""));
-        assertEquals(IPUtil.isValidIPv4Address("127.0.0.1"), true);
+        assertFalse(IPUtil.isValidIPv4Address(""));
+        assertFalse(IPUtil.isValidIPv4Address("127.0.0.1"));
         // 1 <= port <= 65535
-        assertEquals(IPUtil.isValidIPv4Address("127.0.0.1:0"), false);
-        assertEquals(IPUtil.isValidIPv4Address("127.0.0.1:1"), true);
-        assertEquals(IPUtil.isValidIPv4Address("127.0.0.1:65535"), true);
-        assertEquals(IPUtil.isValidIPv4Address("127.0.0.1:65536"), false);
-        assertEquals(IPUtil.isValidIPv4Address("127:8000"), false);
-        assertEquals(IPUtil.isValidIPv4Address("127.0:8000"), false);
-        assertEquals(IPUtil.isValidIPv4Address("127.0.0.0.1:8000"), false);
-        assertEquals(IPUtil.isValidIPv4Address("127.255.0.1:8000"), true);
-        assertEquals(IPUtil.isValidIPv4Address("127.256.0.1:8000"), false);
-        assertEquals(IPUtil.isValidIPv4Address("www.example.com:8000"), false);
+        assertFalse(IPUtil.isValidIPv4Address("127.0.0.1:"));
+        assertFalse(IPUtil.isValidIPv4Address("127.0.0.1:0"));
+        assertTrue(IPUtil.isValidIPv4Address("127.0.0.1:1"));
+        assertTrue(IPUtil.isValidIPv4Address("127.0.0.1:65535"));
+        assertFalse(IPUtil.isValidIPv4Address("127.0.0.1:65536"));
+        assertFalse(IPUtil.isValidIPv4Address("127:8000"));
+        assertFalse(IPUtil.isValidIPv4Address("127.0:8000"));
+        assertFalse(IPUtil.isValidIPv4Address("127.0.0.0.1:8000"));
+        assertTrue(IPUtil.isValidIPv4Address("127.255.0.1:8000"));
+        assertFalse(IPUtil.isValidIPv4Address("127.256.0.1:8000"));
+        assertFalse(IPUtil.isValidIPv4Address("www.example.com:8000"));
     }
 }
