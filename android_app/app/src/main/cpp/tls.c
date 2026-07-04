@@ -38,8 +38,9 @@ static void parse_server_name_extension(const char *data, size_t data_len,
         size_t len = ((unsigned char)data[pos + 1] << 8) +
                      (unsigned char)data[pos + 2];
 
-        if (pos + 3 + len > data_len)
+        if (pos + 3 + len > data_len) {
             return;
+        }
 
         switch (data[pos]) { /* name type */
             case 0x00: /* host_name */
@@ -69,8 +70,9 @@ static void parse_extensions(const char *data, size_t data_len, char *hostname)
              * so we break our state and move p to beinnging
              * of the extension here
              */
-            if (pos + 4 + len > data_len)
+            if (pos + 4 + len > data_len) {
                 return;
+            }
             parse_server_name_extension(data + pos + 4, len,
                                         hostname);
             return;
@@ -96,8 +98,9 @@ void parse_tls_header(const char *data, size_t data_len, char *hostname)
      * Check that our TCP payload is at least large enough for a
      * TLS header
      */
-    if (data_len < TLS_HEADER_LEN)
+    if (data_len < TLS_HEADER_LEN) {
         return;
+    }
 
     /*
      * SSL 2.0 compatible Client Hello
@@ -127,12 +130,14 @@ void parse_tls_header(const char *data, size_t data_len, char *hostname)
     data_len = MIN(data_len, len);
 
     /* Check we received entire TLS record length */
-    if (data_len < len && data_len < 512)
+    if (data_len < len && data_len < 512) {
         return;
+    }
 
     /* Handshake */
-    if (pos + 1 > data_len)
+    if (pos + 1 > data_len) {
         return;
+    }
     if (data[pos] != TLS_HANDSHAKE_TYPE_CLIENT_HELLO) {
         return;
     }
@@ -148,20 +153,23 @@ void parse_tls_header(const char *data, size_t data_len, char *hostname)
     pos += 38;
 
     /* Session ID */
-    if (pos + 1 > data_len)
+    if (pos + 1 > data_len) {
         return;
+    }
     len = (unsigned char)data[pos];
     pos += 1 + len;
 
     /* Cipher Suites */
-    if (pos + 2 > data_len)
+    if (pos + 2 > data_len) {
         return;
+    }
     len = ((unsigned char)data[pos] << 8) + (unsigned char)data[pos + 1];
     pos += 2 + len;
 
     /* Compression Methods */
-    if (pos + 1 > data_len)
+    if (pos + 1 > data_len) {
         return;
+    }
     len = (unsigned char)data[pos];
     pos += 1 + len;
 
@@ -171,13 +179,15 @@ void parse_tls_header(const char *data, size_t data_len, char *hostname)
     }
 
     /* Extensions */
-    if (pos + 2 > data_len)
+    if (pos + 2 > data_len) {
         return;
+    }
     len = ((unsigned char)data[pos] << 8) + (unsigned char)data[pos + 1];
     pos += 2;
 
-    if (pos + len > data_len)
+    if (pos + len > data_len) {
         return;
+    }
 
     parse_extensions(data + pos, MIN(data_len - pos, len), hostname);
 }

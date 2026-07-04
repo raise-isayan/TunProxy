@@ -10,10 +10,12 @@ uint16_t get_mtu() {
 }
 
 uint16_t get_default_mss(int version) {
-    if (version == 4)
+    if (version == 4) {
         return (uint16_t) (get_mtu() - sizeof(struct iphdr) - sizeof(struct tcphdr));
-    else
+    }
+    else {
         return (uint16_t) (get_mtu() - sizeof(struct ip6_hdr) - sizeof(struct tcphdr));
+    }
 }
 
 int check_tun(const struct arguments *args,
@@ -27,17 +29,17 @@ int check_tun(const struct arguments *args,
 
     // Check tun read
     if (ev->events & EPOLLIN) {
-        uint8_t *buffer = malloc(get_mtu()*2);
+        uint8_t *buffer = malloc(get_mtu() * 2);
         ssize_t length = read(args->tun, buffer, get_mtu());
         if (length < 0) {
             free(buffer);
 
             log_android(ANDROID_LOG_ERROR, "tun %d read error %d: %s",
                         args->tun, errno, strerror(errno));
-            if (errno == EINTR || errno == EAGAIN)
+            if (errno == EINTR || errno == EAGAIN) {
                 // Retry later
                 return 0;
-            else {
+            } else {
                 return -1;
             }
         } else if (length > 0) {
@@ -227,8 +229,9 @@ void handle_ip(const struct arguments *args,
             flags[flen++] = 'R';
 
         // TODO checksum
-    } else if (protocol != IPPROTO_HOPOPTS && protocol != IPPROTO_IGMP && protocol != IPPROTO_ESP)
+    } else if (protocol != IPPROTO_HOPOPTS && protocol != IPPROTO_IGMP && protocol != IPPROTO_ESP) {
         log_android(ANDROID_LOG_WARN, "Unknown protocol %d", protocol);
+    }
 
     flags[flen] = 0;
 
@@ -248,18 +251,19 @@ void handle_ip(const struct arguments *args,
     jint uid = -1;
     if (protocol == IPPROTO_ICMP || protocol == IPPROTO_ICMPV6 ||
         (protocol == IPPROTO_UDP && !has_udp_session(args, pkt, payload)) ||
-        (protocol == IPPROTO_TCP && syn))
+        (protocol == IPPROTO_TCP && syn)) {
         uid = get_uid(version, protocol, saddr, sport, daddr, dport);
+    }
 
     log_android(ANDROID_LOG_DEBUG,
                 "Packet v%d %s/%u > %s/%u proto %d flags %s uid %d",
                 version, source, sport, dest, dport, protocol, flags, uid);
 
-    if (protocol == IPPROTO_ICMP || protocol == IPPROTO_ICMPV6)
+    if (protocol == IPPROTO_ICMP || protocol == IPPROTO_ICMPV6) {
         handle_icmp(args, pkt, length, payload, uid, epoll_fd);
-    else if (protocol == IPPROTO_UDP)
+    } else if (protocol == IPPROTO_UDP) {
         handle_udp(args, pkt, length, payload, uid, epoll_fd);
-    else if (protocol == IPPROTO_TCP) {
+    } else if (protocol == IPPROTO_TCP) {
         handle_tcp(args, pkt, length, payload, uid, epoll_fd);
     }
 }
@@ -284,12 +288,14 @@ jint get_uid(const int version, const int protocol,
         uid = get_uid_sub(6, protocol, saddr, sport, daddr128, dport);
     }
 
-    if (uid < 0)
+    if (uid < 0) {
         uid = get_uid_sub(version, protocol, saddr, sport, daddr, dport);
+    }
 
-    if (uid < 0)
+    if (uid < 0) {
         log_android(ANDROID_LOG_ERROR, "uid v%d p%d %u > %s/%u not found",
                     version, protocol, sport, dest, dport);
+    }
 
     return uid;
 }
@@ -318,16 +324,17 @@ jint get_uid_sub(const int version, const int protocol,
 
     // Get proc file name
     char *fn = NULL;
-    if (protocol == IPPROTO_ICMP && version == 4)
+    if (protocol == IPPROTO_ICMP && version == 4) {
         fn = "/proc/net/icmp";
-    else if (protocol == IPPROTO_ICMPV6 && version == 6)
+    }  else if (protocol == IPPROTO_ICMPV6 && version == 6) {
         fn = "/proc/net/icmp6";
-    else if (protocol == IPPROTO_TCP)
+    } else if (protocol == IPPROTO_TCP) {
         fn = (version == 4 ? "/proc/net/tcp" : "/proc/net/tcp6");
-    else if (protocol == IPPROTO_UDP)
+    } else if (protocol == IPPROTO_UDP) {
         fn = (version == 4 ? "/proc/net/udp" : "/proc/net/udp6");
-    else
+    } else {
         return uid;
+    }
 
     // Open proc file
     FILE *fd = fopen(fn, "r");
@@ -346,26 +353,28 @@ jint get_uid_sub(const int version, const int protocol,
             _sport = -1;
             _dport = -1;
             u = -1;
-            if (version == 4)
+            if (version == 4) {
                 fields = sscanf(
                         line,
                         "%*d: %*X:%X %8s:%X %*X %*lX:%*lX %*X:%*X %*X %d %*d %*ld",
                         &_sport, hex, &_dport, &u);
-            else
+            }  else {
                 fields = sscanf(
                         line,
                         "%*d: %*X:%X %32s:%X %*X %*lX:%*lX %*X:%*X %*X %d %*d %*ld",
                         &_sport, hex, &_dport, &u);
+            }
 
             if (fields == 4 && (version == 4 ? strlen(hex) == 8 : strlen(hex) == 32)) {
                 if (_sport > 0 && u >= 0) {
                     hex2bytes(hex, version == 4 ? _daddr4 : _daddr6);
-                    if (version == 4)
+                    if (version == 4) {
                         ((uint32_t *) _daddr4)[0] = htonl(((uint32_t *) _daddr4)[0]);
-                    else
-                        for (int w = 0; w < 4; w++)
+                    } else {
+                        for (int w = 0; w < 4; w++) {
                             ((uint32_t *) _daddr6)[w] = htonl(((uint32_t *) _daddr6)[w]);
-
+                        }
+                    }
                     if (_sport == sport) {
                         uid = u;
                         if (_dport == dport &&
@@ -374,13 +383,15 @@ jint get_uid_sub(const int version, const int protocol,
                             break;
                     }
                 }
-            } else
+            } else {
                 log_android(ANDROID_LOG_ERROR, "Invalid field #%d: %s", fields, line);
+            }
         }
     }
 
-    if (fclose(fd))
+    if (fclose(fd)) {
         log_android(ANDROID_LOG_ERROR, "fclose %s error %d: %s", fn, errno, strerror(errno));
+    }
 
 #ifdef PROFILE_UID
     gettimeofday(&end, NULL);

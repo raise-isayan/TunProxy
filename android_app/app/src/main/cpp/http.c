@@ -13,9 +13,9 @@
 
 static const char http_503[] =
         "HTTP/1.1 503 Service Temporarily Unavailable\r\n"
-                "Content-Type: text/html\r\n"
-                "Connection: close\r\n\r\n"
-                "Backend not available";
+        "Content-Type: text/html\r\n"
+        "Connection: close\r\n\r\n"
+        "Backend not available";
 
 
 /*
@@ -82,8 +82,9 @@ int next_header(const char **data, size_t *len) {
     header_len = 0;
     while (*len > header_len + 1
            && (*data)[header_len] != '\r'
-           && (*data)[header_len + 1] != '\n')
+           && (*data)[header_len + 1] != '\n') {
         header_len++;
+    }
 
     return header_len;
 }
@@ -135,7 +136,8 @@ uint8_t *patch_http_url(uint8_t *data, size_t *data_len) {
     __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "patch_http_url find word");
 
     size_t word_len = 0;
-    while (word_len < *data_len && data[word_len] != ' ' && data[word_len] != '\r' && data[word_len] != '\n') {
+    while (word_len < *data_len && data[word_len] != ' ' && data[word_len] != '\r' &&
+           data[word_len] != '\n') {
         word_len++;
     }
 
@@ -144,7 +146,7 @@ uint8_t *patch_http_url(uint8_t *data, size_t *data_len) {
         return 0;
     }
 
-    if (word_len == strlen("CONNECT")  && memcmp(data, "CONNECT", 7) == 0) {
+    if (word_len == strlen("CONNECT") && memcmp(data, "CONNECT", 7) == 0) {
         LOG("patch_http_url skip CONNECT");
         return 0;
     }
