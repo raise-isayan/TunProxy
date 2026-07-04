@@ -2,7 +2,10 @@ package tun.utils;
 
 import android.util.Log;
 
+import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,24 +13,34 @@ import java.util.List;
 public class IPUtil {
     private static final String TAG = "Tun2Http.IPUtil";
 
-    public static boolean isValidIPv4Address(String address) {
-        if (address.isEmpty()) {
-            return false;
+    public static boolean isConnection(String host, int port) {
+        boolean reachable = false;
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(host, port), 1000);
+            reachable = true;
+        } catch (IOException ignored) {
+            // ignored
         }
-        String [] parts = address.split(":");
-        if (parts.length != 2) {
-            return false;
-        }
-        int port = 0;
+        return reachable;
+    }
+
+    public static boolean resolvHost(String hostName) {
+        boolean resolvable = false;
         try {
-            port = Integer.parseInt(parts[1]);
-        } catch (NumberFormatException e) {
+            InetAddress.getByName(hostName);
+            resolvable = true;
+        } catch (UnknownHostException ignored) {
+            // ignored
+        }
+        return resolvable;
+    }
+
+
+    public static boolean isValidIPv4Address(String ipv4) {
+        if (ipv4.isEmpty()) {
             return false;
         }
-        if (!(0 < port && port < 65536)) {
-            return false;
-        }
-        String[] ipParts = parts[0].split("\\.");
+        String[] ipParts = ipv4.split("\\.");
         if (ipParts.length != 4) {
             return false;
         } else {
@@ -44,6 +57,40 @@ public class IPUtil {
             }
         }
         return true;
+    }
+
+    public static boolean isValidHostPort(String address) {
+        if (address == null || address.isEmpty()) {
+            return false;
+        }
+        String [] parts = address.split(":");
+        if (parts.length != 2) {
+            return false;
+        }
+        int port = 0;
+        try {
+            port = Integer.parseInt(parts[1]);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        if (!(0 < port && port < 65536)) {
+            return false;
+        }
+        String host = parts[0];
+        return isValidIPv4Address(host) || isDomain(host);
+    }
+
+    public static boolean isDomain(String host) {
+        if (host == null || host.isEmpty()) return false;
+        // Basic domain validation:
+        // 1. Starts with an alphabetic character
+        // 2. Contains only alphanumeric characters, dots, and hyphens
+        // 3. No leading/trailing hyphens in labels
+        return host.matches("^[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
+    }
+
+    protected static boolean isValidHost(String host) {
+        return isValidIPv4Address(host) || isDomain(host);
     }
 
     public static List<CIDR> toCIDR(String start, String end) throws UnknownHostException {

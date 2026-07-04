@@ -216,16 +216,34 @@ public class Tun2HttpVpnService extends VpnService {
 
     private void startNative(ParcelFileDescriptor vpn) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        String proxyHost = prefs.getString(PREF_PROXY_HOST, "");
-        int proxyPort = prefs.getInt(PREF_PROXY_PORT, 0);
-        String proxyTypeName = prefs.getString(PREF_PROXY_TYPE, MyApplication.ProxyType.HTTP.name());
-        MyApplication.ProxyType proxyType = Enum.valueOf(MyApplication.ProxyType.class, proxyTypeName);
-        boolean isSocks5 = MyApplication.ProxyType.SOCKS5.equals(proxyType);
+        final String proxyHost = prefs.getString(PREF_PROXY_HOST, "");
+        final int proxyPort = prefs.getInt(PREF_PROXY_PORT, 0);
+        final String proxyTypeName = prefs.getString(PREF_PROXY_TYPE, MyApplication.ProxyType.HTTP.name());
+        final MyApplication.ProxyType proxyType = Enum.valueOf(MyApplication.ProxyType.class, proxyTypeName);
+        final boolean isSocks5 = MyApplication.ProxyType.SOCKS5.equals(proxyType);
+
         if (proxyPort != 0 && !TextUtils.isEmpty(proxyHost)) {
-            jni_start(vpn.getFd(), false, 3, proxyHost, proxyPort, isSocks5);
-            MyApplication app = (MyApplication) this.getApplication();
-            assert app != null;
-            app.storeProxyRunning(true);
+            new Thread(() -> {
+                String proxyIp = "";
+                try {
+                    InetAddress address = InetAddress.getByName(proxyHost);
+                    proxyIp = address.getHostAddress();
+                } catch (Exception e) {
+                    Log.e(TAG, "DNS resolution failed for " + proxyHost + ": " + e.getMessage());
+                }
+
+                if (TextUtils.isEmpty(proxyIp)) {
+                    stop();
+                    return;
+                }
+
+                final String finalProxyIp = proxyIp;
+                jni_start(vpn.getFd(), false, 3, finalProxyIp, proxyPort, isSocks5);
+                MyApplication app = (MyApplication) getApplication();
+                if (app != null) {
+                    app.storeProxyRunning(true);
+                }
+            }).start();
         }
     }
 

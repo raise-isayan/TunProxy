@@ -37,6 +37,7 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
@@ -215,36 +216,33 @@ public class MainActivity extends AppCompatActivity {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean connectivityCheck = app.loadProxyConnectivityCheck(false);
 
-        if (connectivityCheck) {
-            if (parseAndSaveHostPort()) {
-                String host = prefs.getString(Tun2HttpVpnService.PREF_PROXY_HOST, "");
-                int port = prefs.getInt(Tun2HttpVpnService.PREF_PROXY_PORT, 0);
+        if (parseAndSaveHostPort()) {
+            String host = prefs.getString(Tun2HttpVpnService.PREF_PROXY_HOST, "");
+            int port = prefs.getInt(Tun2HttpVpnService.PREF_PROXY_PORT, 0);
 
-                new Thread(() -> {
+            new Thread(() -> {
+                boolean resolvable = IPUtil.resolvHost(host);
+                if (!resolvable) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "DNS resolution failed for " + host, Toast.LENGTH_SHORT).show();
+                    });
+                    return;
+                }
+                if (connectivityCheck) {
                     boolean reachable = false;
                     if (service != null && service.isNetworkConnected()) {
-                        try (Socket socket = new Socket()) {
-                            socket.connect(new InetSocketAddress(host, port), 2000);
-                            reachable = true;
-                        } catch (Exception e) {
-                            Log.e(TAG, "Reachability check failed: " + e.getMessage());
-                        }
+                        reachable = IPUtil.isConnection(host, port);
                     }
-
-                    boolean finalReachable = reachable;
-                    runOnUiThread(() -> {
-                        if (finalReachable) {
-                            proceedWithStartVpn();
-                        } else {
+                    if (!reachable) {
+                        runOnUiThread(() -> {
                             Toast.makeText(this, "Connectivity check failed", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                }).start();
-            }
-        } else {
-            if (parseAndSaveHostPort()) {
-                proceedWithStartVpn();
-            }
+                        });
+                        return;
+                    }
+                }
+
+                runOnUiThread(this::proceedWithStartVpn);
+            }).start();
         }
     }
 
@@ -280,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean parseAndSaveHostPort() {
         String proxyTarget = hostEditText.getText().toString();
-        if (!IPUtil.isValidIPv4Address(proxyTarget)) {
+        if (!IPUtil.isValidHostPort(proxyTarget)) {
             hostEditText.setError(getString(R.string.enter_host));
             return false;
         }
@@ -295,7 +293,6 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         }
-        String[] ipParts = parts[0].split("\\.");
         String host = parts[0];
         String proxyType = (String) proxyTypeSpinner.getSelectedItem();
 
