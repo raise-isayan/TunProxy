@@ -192,8 +192,9 @@ static jmethodID midProtect = NULL;
 
 int protect_socket(const struct arguments *args, int socket) {
     jclass cls = (*args->env)->GetObjectClass(args->env, args->instance);
-    if (midProtect == NULL)
+    if (midProtect == NULL) {
         midProtect = jniGetMethodID(args->env, cls, "protect", "(I)Z");
+    }
 
     jboolean isProtected = (*args->env)->CallBooleanMethod(
             args->env, args->instance, midProtect, socket);

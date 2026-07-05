@@ -143,7 +143,7 @@ public class Tun2HttpVpnService extends VpnService {
         } catch (SecurityException ex) {
             throw ex;
         } catch (Throwable ex) {
-            Log.e(TAG, ex.toString() + "\n" + Log.getStackTraceString(ex));
+            Log.e(TAG, ex + "\n" + Log.getStackTraceString(ex));
             return null;
         }
     }
@@ -253,7 +253,7 @@ public class Tun2HttpVpnService extends VpnService {
 
         } catch (Throwable ex) {
             // File descriptor might be closed
-            Log.e(TAG, ex.toString() + "\n" + Log.getStackTraceString(ex));
+            Log.e(TAG, ex + "\n" + Log.getStackTraceString(ex));
             jni_stop(-1);
         }
 
@@ -268,7 +268,7 @@ public class Tun2HttpVpnService extends VpnService {
         try {
             pfd.close();
         } catch (IOException ex) {
-            Log.e(TAG, ex.toString() + "\n" + Log.getStackTraceString(ex));
+            Log.e(TAG, ex + "\n" + Log.getStackTraceString(ex));
         }
     }
 
@@ -329,7 +329,7 @@ public class Tun2HttpVpnService extends VpnService {
                 vpn = null;
             }
         } catch (Throwable ex) {
-            Log.e(TAG, ex.toString() + "\n" + Log.getStackTraceString(ex));
+            Log.e(TAG, ex + "\n" + Log.getStackTraceString(ex));
         }
 
         jni_done();

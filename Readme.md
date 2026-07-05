@@ -12,8 +12,8 @@ When you start the TunProxy application, the following screen will be launched.
 
 ![Tun Proxy](images/TunProxy.png)
 
-* Proxy address (IPv4:port)
-  * Specify the destination proxy server in the format **IPv4 address:port number**.
+* Proxy address (host:port)
+  * Specify the destination proxy server in the format ** host:port r**.
     The IP address must be described in IPv4 format.
 
 * [Start] button

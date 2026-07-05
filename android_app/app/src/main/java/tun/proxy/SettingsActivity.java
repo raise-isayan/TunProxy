@@ -9,6 +9,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 //import android.os.AsyncTask;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -39,6 +40,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -80,8 +82,6 @@ public class SettingsActivity extends AppCompatActivity implements
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
     }
-
-    ;
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState) {
@@ -167,13 +167,13 @@ public class SettingsActivity extends AppCompatActivity implements
              */
 
             /* Allowed / Disallowed Application */
-            final ListPreference prefVpnMode = (ListPreference) this.findPreference(VPN_CONNECTION_MODE);
+            final ListPreference prefVpnMode = this.findPreference(VPN_CONNECTION_MODE);
             assert prefVpnMode != null;
-            final PreferenceScreen prefDisallow = (PreferenceScreen) findPreference(VPN_DISALLOWED_APPLICATION_LIST);
+            final PreferenceScreen prefDisallow = findPreference(VPN_DISALLOWED_APPLICATION_LIST);
             assert prefDisallow != null;
-            final PreferenceScreen prefAllow = (PreferenceScreen) findPreference(VPN_ALLOWED_APPLICATION_LIST);
+            final PreferenceScreen prefAllow = findPreference(VPN_ALLOWED_APPLICATION_LIST);
             assert prefAllow != null;
-            final PreferenceScreen clearAllSelection = (PreferenceScreen) findPreference(VPN_CLEAR_ALL_SELECTION);
+            final PreferenceScreen clearAllSelection = findPreference(VPN_CLEAR_ALL_SELECTION);
             assert clearAllSelection != null;
             clearAllSelection.setOnPreferenceClickListener(this);
 
@@ -202,7 +202,7 @@ public class SettingsActivity extends AppCompatActivity implements
             /*
              * Proxy setting
              */
-            final SwitchPreference prefConnectionChek = (SwitchPreference) this.findPreference(PROXY_CONNECTIVITY_CHECK);
+            final SwitchPreference prefConnectionChek = this.findPreference(PROXY_CONNECTIVITY_CHECK);
             assert prefConnectionChek != null;
             prefConnectionChek.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
@@ -220,7 +220,7 @@ public class SettingsActivity extends AppCompatActivity implements
              * DNS setting
              */
 
-            final SwitchPreference prefUseDns = (SwitchPreference) this.findPreference(DNS_USE_CUSTOM);
+            final SwitchPreference prefUseDns = this.findPreference(DNS_USE_CUSTOM);
             assert prefUseDns != null;
             prefUseDns.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
@@ -233,7 +233,7 @@ public class SettingsActivity extends AppCompatActivity implements
                     return true;
                 }
             });
-            final EditTextPreference prefDnsPrimary = (EditTextPreference) this.findPreference(DNS_PRIMARY);
+            final EditTextPreference prefDnsPrimary = this.findPreference(DNS_PRIMARY);
             assert prefDnsPrimary != null;
             prefDnsPrimary.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
@@ -246,7 +246,7 @@ public class SettingsActivity extends AppCompatActivity implements
                     return true;
                 }
             });
-            final EditTextPreference prefDnsSecondary = (EditTextPreference) this.findPreference(DNS_SECONDARY);
+            final EditTextPreference prefDnsSecondary = this.findPreference(DNS_SECONDARY);
             assert prefDnsSecondary != null;
             prefDnsSecondary.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
@@ -265,9 +265,9 @@ public class SettingsActivity extends AppCompatActivity implements
         }
 
         private void updateMenuItem() {
-            final PreferenceScreen prefDisallow = (PreferenceScreen) findPreference(VPN_DISALLOWED_APPLICATION_LIST);
+            final PreferenceScreen prefDisallow = findPreference(VPN_DISALLOWED_APPLICATION_LIST);
             assert prefDisallow != null;
-            final PreferenceScreen prefAllow = (PreferenceScreen) findPreference(VPN_ALLOWED_APPLICATION_LIST);
+            final PreferenceScreen prefAllow = findPreference(VPN_ALLOWED_APPLICATION_LIST);
             assert prefAllow != null;
 
             final MyApplication app = MyApplication.getInstance();
@@ -275,9 +275,9 @@ public class SettingsActivity extends AppCompatActivity implements
             int countDisallow = app.loadVPNApplication(MyApplication.VPNMode.DISALLOW).size();
             int countAllow = app.loadVPNApplication(MyApplication.VPNMode.ALLOW).size();
             prefDisallow.setTitle(getString(R.string.vpn_disallowed_application_list));
-            prefDisallow.setSummary(getString(R.string.vpn_disallowed_application_count) + String.format(" %d", countDisallow));
+            prefDisallow.setSummary(getString(R.string.vpn_disallowed_application_count) + String.format(Locale.ROOT," %d", countDisallow));
             prefAllow.setTitle(getString(R.string.vpn_allowed_application_list));
-            prefAllow.setSummary(getString(R.string.vpn_allowed_application_count) + String.format(" %d", countAllow));
+            prefAllow.setSummary(getString(R.string.vpn_allowed_application_count) + String.format(Locale.ROOT, " %d", countAllow));
 
         }
 
@@ -716,7 +716,14 @@ public class SettingsActivity extends AppCompatActivity implements
             assert app != null;
             final Context context = app.getApplicationContext();
             final PackageManager pm = context.getPackageManager();
-            final List<PackageInfo> installedPackages = pm.getInstalledPackages(PackageManager.GET_META_DATA);
+            List<PackageInfo> installedPackages = List.of();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                // Android 13 (API 33) 以降
+                installedPackages = pm.getInstalledPackages(PackageManager.PackageInfoFlags.of(0));
+            } else {
+                // Android 12 以前
+                installedPackages = pm.getInstalledPackages(0);
+            }
             Collections.sort(installedPackages, new Comparator<PackageInfo>() {
                 @Override
                 public int compare(PackageInfo o1, PackageInfo o2) {
@@ -791,12 +798,11 @@ public class SettingsActivity extends AppCompatActivity implements
                         t1 = pi.packageName;
                         break;
                 }
-                if (t2.isEmpty() || t1.toLowerCase().contains(t2.toLowerCase())) {
+                if (t2.isEmpty() || t1.toLowerCase(Locale.ROOT).contains(t2.toLowerCase(Locale.ROOT))) {
                     final Preference preference = packageFragment.buildPackagePreferences(pm, pi);
                     packageFragment.mFilterPreferenceScreen.addPreference(preference);
                 }
             }
-            return;
         }
 
         @Override
@@ -804,7 +810,6 @@ public class SettingsActivity extends AppCompatActivity implements
             super.onCancelled();
             packageFragment.mAllPackageInfoMap.clear();
             packageFragment.mFilterPreferenceScreen.removeAll();
-            return;
         }
     }
 

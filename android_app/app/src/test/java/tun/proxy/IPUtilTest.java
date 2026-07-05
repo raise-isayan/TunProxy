@@ -38,7 +38,7 @@ public class IPUtilTest {
         assertFalse(IPUtil.isDomain("127"));
         assertTrue(IPUtil.isDomain("localhost"));
         assertTrue(IPUtil.isDomain("www.example.com"));
-        assertTrue(IPUtil.isDomain("xn--vck8cuc4a"));
+        assertTrue(IPUtil.isDomain("xn--eckwd4c7cu47r2wf.jp"));
     }
 
     @Test

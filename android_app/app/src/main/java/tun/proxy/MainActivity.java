@@ -40,6 +40,7 @@ import android.widget.Toast;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.Locale;
 
 import tun.proxy.service.Tun2HttpVpnService;
 import tun.utils.IPUtil;
@@ -271,7 +272,7 @@ public class MainActivity extends AppCompatActivity {
         if (TextUtils.isEmpty(proxyHost)) {
             return;
         }
-        hostEditText.setText(proxyHost + ":" + proxyPort);
+        hostEditText.setText(String.format(Locale.ROOT,"%s:%d", proxyHost, proxyPort));
         proxyTypeSpinner.setSelection(proxyType.ordinal());
 
     }
@@ -282,8 +283,8 @@ public class MainActivity extends AppCompatActivity {
             hostEditText.setError(getString(R.string.enter_host));
             return false;
         }
-        // IPv4:port 分離
-        String parts[] = proxyTarget.split(":");
+        // host:port 分離
+        String[] parts = proxyTarget.split(":");
         int port = 0;
         if (parts.length > 1) {
             try {

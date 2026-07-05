@@ -20,7 +20,6 @@ import java.util.regex.Pattern;
 public class CertificateUtil {
     private static final String TAG = "CertificateManager";
     private final static Pattern CA_COMMON_NAME = Pattern.compile("CN=([^,]+),?.*$");
-    ;
     private final static Pattern CA_ORGANIZATION = Pattern.compile("O=([^,]+),?.*$");
 
     public static boolean findCAStore(String caName) {
@@ -34,7 +33,7 @@ public class CertificateUtil {
             X509Certificate rootCACert = null;
             Enumeration<String> aliases = ks.aliases();
             while (aliases.hasMoreElements()) {
-                String alias = (String) aliases.nextElement();
+                String alias = aliases.nextElement();
                 rootCACert = (X509Certificate) ks.getCertificate(alias);
                 if (rootCACert.getIssuerDN().getName().contains(caName)) {
                     found = true;
@@ -60,7 +59,7 @@ public class CertificateUtil {
             Enumeration<String> aliases = ks.aliases();
             boolean found = false;
             while (aliases.hasMoreElements()) {
-                String alias = (String) aliases.nextElement();
+                String alias = aliases.nextElement();
                 X509Certificate cert = (X509Certificate) ks.getCertificate(alias);
                 System.out.println(alias + "/" + cert.getIssuerX500Principal().getName());
                 rootCAList.add(cert);
@@ -85,7 +84,7 @@ public class CertificateUtil {
             Enumeration<String> aliases = ks.aliases();
             List<X509Certificate> certList = new ArrayList<>();
             while (aliases.hasMoreElements()) {
-                String alias = (String) aliases.nextElement();
+                String alias = aliases.nextElement();
                 X509Certificate cert = (X509Certificate) ks.getCertificate(alias);
                 if (type.contains(CertificateInstallType.SYSTEM) && alias.startsWith("system:")) {
                     certList.add(cert);
@@ -121,7 +120,7 @@ public class CertificateUtil {
         return rootCAMap;
     }
 
-    public static String encode(byte b[]) {
+    public static String encode(byte[] b) {
         return new String(b, StandardCharsets.ISO_8859_1);
     }
 
