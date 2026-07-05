@@ -14,7 +14,7 @@ When you start the TunProxy application, the following screen will be launched.
 
 * Proxy address (host:port)
   * Specify the destination proxy server in the format ** host:port r**.
-    The IP address must be described in IPv4 format.
+    When you specify an IP address, use the IPv4 format.
 
 * [Start] button
   * Start the VPN service.
