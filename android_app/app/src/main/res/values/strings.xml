@@ -70,11 +70,14 @@
     <string name="profile_name_hint">Profile Name</string>
     <string name="profile_delete_title">Delete Profile</string>
     <string name="profile_delete_msg">Are you sure you want to delete this profile?</string>
+    <string name="profile_new">New</string>
     <string name="profile_new_title">New Profile</string>
     <string name="profile_edit_title">Edit Profile</string>
     <string name="profile_error_fields">Please enter all fields</string>
     <string name="profile_error_format">Invalid Host:Port format</string>
     <string name="profile_error_port">Invalid port number</string>
+    <string name="profile_item_edit">Edit</string>
+    <string name="profile_item_delete">Delete</string>
 
 
 </resources>

@@ -2,19 +2,22 @@ package tun.proxy;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.List;
 import java.util.Locale;
@@ -41,8 +44,9 @@ public class ProfileSettingActivity extends AppCompatActivity {
         ListView listView = findViewById(R.id.profile_list);
         profileList = MyApplication.getInstance().loadProfiles();
         adapter = new ArrayAdapter<ProfileItem>(this, R.layout.item_profile, profileList) {
+            @NonNull
             @Override
-            public View getView(int position, View convertView, android.view.ViewGroup parent) {
+            public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
                 if (convertView == null) {
                     convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_profile, parent, false);
                 }
@@ -51,36 +55,60 @@ public class ProfileSettingActivity extends AppCompatActivity {
                     TextView textName = convertView.findViewById(R.id.text_name);
                     TextView textHostPort = convertView.findViewById(R.id.text_host_port);
                     TextView textType = convertView.findViewById(R.id.text_type);
+                    ImageButton btnEdit = convertView.findViewById(R.id.btn_edit);
+                    ImageButton btnDelete = convertView.findViewById(R.id.btn_delete);
 
                     textName.setText(item.getName());
                     textHostPort.setText(String.format(Locale.ROOT, "%s:%d", item.getHost(), item.getPort()));
                     textType.setText(item.getType().name());
+
+                    boolean running = MyApplication.getInstance().loadProxyRunning(false);
+                    btnEdit.setEnabled(!running);
+                    btnDelete.setEnabled(!running);
+
+                    btnEdit.setOnClickListener(v -> showProfileEditDialog(item, position));
+                    btnDelete.setOnClickListener(v -> {
+                        new AlertDialog.Builder(ProfileSettingActivity.this)
+                                .setTitle(R.string.profile_delete_title)
+                                .setMessage(R.string.profile_delete_msg)
+                                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                                    profileList.remove(position);
+                                    MyApplication.getInstance().storeProfiles(profileList);
+                                    notifyDataSetChanged();
+                                })
+                                .setNegativeButton(android.R.string.cancel, null)
+                                .show();
+                    });
                 }
                 return convertView;
             }
         };
         listView.setAdapter(adapter);
+    }
 
-        listView.setOnItemClickListener((parent, view, position, id) -> {
-            showProfileEditDialog(profileList.get(position), position);
-        });
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_profile_setting, menu);
+        return true;
+    }
 
-        listView.setOnItemLongClickListener((parent, view, position, id) -> {
-            new AlertDialog.Builder(this)
-                    .setTitle(R.string.profile_delete_title)
-                    .setMessage(R.string.profile_delete_msg)
-                    .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                        profileList.remove(position);
-                        MyApplication.getInstance().storeProfiles(profileList);
-                        adapter.notifyDataSetChanged();
-                    })
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .show();
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem item = menu.findItem(R.id.action_add_profile);
+        if (item != null) {
+            boolean running = MyApplication.getInstance().loadProxyRunning(false);
+            item.setEnabled(!running);
+        }
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_add_profile) {
+            showProfileEditDialog(null, -1);
             return true;
-        });
-
-        FloatingActionButton fab = findViewById(R.id.fab_add);
-        fab.setOnClickListener(v -> showProfileEditDialog(null, -1));
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void showProfileEditDialog(ProfileItem profile, int position) {
