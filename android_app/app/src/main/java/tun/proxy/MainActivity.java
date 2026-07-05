@@ -27,19 +27,18 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.AdapterView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import tun.proxy.service.Tun2HttpVpnService;
@@ -52,6 +51,9 @@ public class MainActivity extends AppCompatActivity {
     Button stopButton;
     EditText hostEditText;
     Spinner proxyTypeSpinner;
+    Spinner profileSpinner;
+    private List<ProfileItem> profileList;
+    private ArrayAdapter<ProfileItem> profileAdapter;
     private final ActivityResultLauncher<Intent> vpnRequestLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -90,10 +92,14 @@ public class MainActivity extends AppCompatActivity {
         stopButton = findViewById(R.id.stop);
         hostEditText = findViewById(R.id.host);
         proxyTypeSpinner = findViewById(R.id.proxy_type);
+        profileSpinner = findViewById(R.id.spinner_profile);
+
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.proxy_types, R.layout.spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         proxyTypeSpinner.setAdapter(adapter);
+
+        setupProfileSpinner();
 
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -112,6 +118,36 @@ public class MainActivity extends AppCompatActivity {
         loadHostPort();
     }
 
+    private void setupProfileSpinner() {
+        profileList = new ArrayList<>();
+        profileList.add(new ProfileItem(getString(R.string.profile_manual), "", -1, MyApplication.ProxyType.HTTP));
+        profileList.addAll(MyApplication.getInstance().loadProfiles());
+
+        profileAdapter = new ArrayAdapter<>(this, R.layout.spinner_item, profileList);
+        profileAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        profileSpinner.setAdapter(profileAdapter);
+
+        profileSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                hostEditText.setError(null);
+                if (position == 0) { // "Manual"
+                    hostEditText.setText("");
+                    proxyTypeSpinner.setSelection(MyApplication.ProxyType.HTTP.ordinal());
+                }
+                else if (position > 0) { // Not "Manual"
+                    ProfileItem profile = profileList.get(position);
+                    hostEditText.setText(String.format(Locale.ROOT, "%s:%d", profile.getHost(), profile.getPort()));
+                    proxyTypeSpinner.setSelection(profile.getType().ordinal());
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -121,8 +157,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        MenuItem item = menu.findItem(R.id.action_activity_settings);
-        item.setEnabled(startButton.isEnabled());
+        MenuItem itemSettings = menu.findItem(R.id.action_activity_settings);
+        MenuItem itemProfile = menu.findItem(R.id.action_profile_settings);
+        boolean enabled = startButton.isEnabled();
+        if (itemSettings != null) itemSettings.setEnabled(enabled);
+        if (itemProfile != null) itemProfile.setEnabled(enabled);
         return true;
     }
 
@@ -131,6 +170,9 @@ public class MainActivity extends AppCompatActivity {
         int item_id = item.getItemId();
         if (item_id == R.id.action_activity_settings) {
             Intent intent = new android.content.Intent(this, SettingsActivity.class);
+            startActivity(intent);
+        } else if (item_id == R.id.action_profile_settings) {
+            Intent intent = new Intent(this, ProfileSettingActivity.class);
             startActivity(intent);
         } else if (item_id == R.id.action_show_about) {
             new AlertDialog.Builder(this)
@@ -163,10 +205,25 @@ public class MainActivity extends AppCompatActivity {
         stopButton.setEnabled(false);
         updateStatus();
 
+        refreshProfileSpinner();
+
         statusHandler.post(statusRunnable);
 
         Intent intent = new Intent(this, Tun2HttpVpnService.class);
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private void refreshProfileSpinner() {
+        if (profileList != null) {
+            int selected = profileSpinner.getSelectedItemPosition();
+            profileList.clear();
+            profileList.add(new ProfileItem(getString(R.string.profile_manual), "", 0, MyApplication.ProxyType.HTTP));
+            profileList.addAll(MyApplication.getInstance().loadProfiles());
+            profileAdapter.notifyDataSetChanged();
+            if (selected < profileList.size()) {
+                profileSpinner.setSelection(selected);
+            }
+        }
     }
 
     boolean isRunning() {
@@ -192,15 +249,18 @@ public class MainActivity extends AppCompatActivity {
         if (service == null) {
             return;
         }
-        if (isRunning()) {
+        boolean running = isRunning();
+        if (running) {
             startButton.setEnabled(false);
             hostEditText.setEnabled(false);
             proxyTypeSpinner.setEnabled(false);
+            profileSpinner.setEnabled(false);
             stopButton.setEnabled(true);
         } else {
             startButton.setEnabled(true);
             hostEditText.setEnabled(true);
             proxyTypeSpinner.setEnabled(true);
+            profileSpinner.setEnabled(true);
             stopButton.setEnabled(false);
         }
     }
@@ -219,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (parseAndSaveHostPort()) {
             String host = prefs.getString(Tun2HttpVpnService.PREF_PROXY_HOST, "");
-            int port = prefs.getInt(Tun2HttpVpnService.PREF_PROXY_PORT, 0);
+            int port = prefs.getInt(Tun2HttpVpnService.PREF_PROXY_PORT, -1);
 
             new Thread(() -> {
                 boolean resolvable = IPUtil.resolvHost(host);
@@ -265,11 +325,11 @@ public class MainActivity extends AppCompatActivity {
     private void loadHostPort() {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         final String proxyHost = prefs.getString(Tun2HttpVpnService.PREF_PROXY_HOST, "");
-        int proxyPort = prefs.getInt(Tun2HttpVpnService.PREF_PROXY_PORT, 0);
+        int proxyPort = prefs.getInt(Tun2HttpVpnService.PREF_PROXY_PORT, -1);
         String proxyTypeName = prefs.getString(Tun2HttpVpnService.PREF_PROXY_TYPE, MyApplication.ProxyType.HTTP.name());
         MyApplication.ProxyType proxyType = Enum.valueOf(MyApplication.ProxyType.class, proxyTypeName);
 
-        if (TextUtils.isEmpty(proxyHost)) {
+        if (!IPUtil.isValidHost(proxyHost) || !IPUtil.isValiPort(proxyPort)) {
             return;
         }
         hostEditText.setText(String.format(Locale.ROOT,"%s:%d", proxyHost, proxyPort));
@@ -285,7 +345,7 @@ public class MainActivity extends AppCompatActivity {
         }
         // host:port 分離
         String[] parts = proxyTarget.split(":");
-        int port = 0;
+        int port = -1; // デフォルト値にはならないはず
         if (parts.length > 1) {
             try {
                 port = Integer.parseInt(parts[1]);

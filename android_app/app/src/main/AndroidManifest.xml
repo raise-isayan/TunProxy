@@ -40,6 +40,16 @@
                 android:value="tun.proxy.MainActivity" />
         </activity>
 
+        <activity
+            android:name=".ProfileSettingActivity"
+            android:label="Profile Setting"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:parentActivityName=".MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="tun.proxy.MainActivity" />
+        </activity>
+
         <service
             android:name=".service.Tun2HttpVpnService"
             android:permission="android.permission.BIND_VPN_SERVICE"

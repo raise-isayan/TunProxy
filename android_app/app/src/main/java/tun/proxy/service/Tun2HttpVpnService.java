@@ -34,6 +34,7 @@ import java.util.Set;
 
 import tun.proxy.MyApplication;
 import tun.proxy.R;
+import tun.utils.IPUtil;
 import tun.utils.Util;
 
 @SuppressLint("VpnServicePolicy")
@@ -217,12 +218,12 @@ public class Tun2HttpVpnService extends VpnService {
     private void startNative(ParcelFileDescriptor vpn) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         final String proxyHost = prefs.getString(PREF_PROXY_HOST, "");
-        final int proxyPort = prefs.getInt(PREF_PROXY_PORT, 0);
+        final int proxyPort = prefs.getInt(PREF_PROXY_PORT, -1);
         final String proxyTypeName = prefs.getString(PREF_PROXY_TYPE, MyApplication.ProxyType.HTTP.name());
         final MyApplication.ProxyType proxyType = Enum.valueOf(MyApplication.ProxyType.class, proxyTypeName);
         final boolean isSocks5 = MyApplication.ProxyType.SOCKS5.equals(proxyType);
 
-        if (proxyPort != 0 && !TextUtils.isEmpty(proxyHost)) {
+        if (IPUtil.isValidHost(proxyHost) && IPUtil.isValiPort(proxyPort)) {
             new Thread(() -> {
                 String proxyIp = "";
                 try {

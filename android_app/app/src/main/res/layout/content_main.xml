@@ -17,6 +17,12 @@
         app:layout_constraintStart_toStartOf="parent"
         tools:layout_editor_absoluteY="0dp">
 
+        <Spinner
+            android:id="@+id/spinner_profile"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp" />
+
         <EditText
             android:id="@+id/host"
             android:layout_width="wrap_content"

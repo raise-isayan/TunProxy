@@ -3,6 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="tun.proxy.MainActivity">
     <item
+        android:id="@+id/action_profile_settings"
+        android:orderInCategory="90"
+        android:title="Profile Setting"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_activity_settings"
         android:orderInCategory="100"
         android:title="@string/title_activity_settings"

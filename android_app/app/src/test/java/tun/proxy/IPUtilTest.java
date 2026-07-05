@@ -19,7 +19,7 @@ public class IPUtilTest {
         assertFalse(IPUtil.isValidHostPort("127.0.0.1"));
         // 1 <= port <= 65535
         assertFalse(IPUtil.isValidHostPort("127.0.0.1:"));
-        assertFalse(IPUtil.isValidHostPort("127.0.0.1:0"));
+        assertTrue(IPUtil.isValidHostPort("127.0.0.1:0"));
         assertTrue(IPUtil.isValidHostPort("127.0.0.1:1"));
         assertTrue(IPUtil.isValidHostPort("127.0.0.1:65535"));
         assertFalse(IPUtil.isValidHostPort("127.0.0.1:65536"));

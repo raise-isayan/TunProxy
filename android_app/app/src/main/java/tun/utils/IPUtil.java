@@ -15,11 +15,13 @@ public class IPUtil {
 
     public static boolean isConnection(String host, int port) {
         boolean reachable = false;
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(host, port), 1000);
-            reachable = true;
-        } catch (IOException ignored) {
-            // ignored
+        if (isValiPort(port)) {
+            try (Socket socket = new Socket()) {
+                socket.connect(new InetSocketAddress(host, port), 1000);
+                reachable = true;
+            } catch (IOException ignored) {
+                // ignored
+            }
         }
         return reachable;
     }
@@ -67,17 +69,24 @@ public class IPUtil {
         if (parts.length != 2) {
             return false;
         }
-        int port = 0;
+        int port = -1;
         try {
             port = Integer.parseInt(parts[1]);
         } catch (NumberFormatException e) {
             return false;
         }
-        if (!(0 < port && port < 65536)) {
+        if (!isValiPort(port)) {
             return false;
         }
         String host = parts[0];
         return isValidIPv4Address(host) || isDomain(host);
+    }
+
+    public static boolean isValiPort(int port) {
+        if (0 <= port && port < 65536) {
+            return true;
+        }
+        return false;
     }
 
     public static boolean isDomain(String host) {
@@ -89,7 +98,7 @@ public class IPUtil {
         return host.matches("^[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
     }
 
-    protected static boolean isValidHost(String host) {
+    public static boolean isValidHost(String host) {
         return isValidIPv4Address(host) || isDomain(host);
     }
 

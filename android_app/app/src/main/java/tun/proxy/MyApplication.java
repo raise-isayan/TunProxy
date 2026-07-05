@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class MyApplication extends Application {
+    private static final String TAG = "MainActivity";
+
     private final static String PREF_VPN_MODE = "pref_vpn_connection_mode";
     private final static String[] PREF_APP_KEY = {"pref_vpn_disallowed_application", "pref_vpn_allowed_application"};
 
@@ -22,6 +24,39 @@ public class MyApplication extends Application {
     public void onCreate() {
         super.onCreate();
         instance = this;
+    }
+
+    /*
+     * Profile setting
+     */
+    private static final String PREF_PROFILES = "pref_profiles";
+
+    public java.util.List<ProfileItem> loadProfiles() {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        String profilesJson = prefs.getString(PREF_PROFILES, "[]");
+        java.util.List<ProfileItem> profiles = new java.util.ArrayList<>();
+        try {
+            org.json.JSONArray array = new org.json.JSONArray(profilesJson);
+            for (int i = 0; i < array.length(); i++) {
+                profiles.add(ProfileItem.fromJSONObject(array.getJSONObject(i)));
+            }
+        } catch (org.json.JSONException e) {
+            android.util.Log.e(TAG, "Error loading profiles", e);
+        }
+        return profiles;
+    }
+
+    public void storeProfiles(java.util.List<ProfileItem> profiles) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        org.json.JSONArray array = new org.json.JSONArray();
+        try {
+            for (ProfileItem profile : profiles) {
+                array.put(profile.toJSONObject());
+            }
+            prefs.edit().putString(PREF_PROFILES, array.toString()).apply();
+        } catch (org.json.JSONException e) {
+            android.util.Log.e(TAG, "Error storing profiles", e);
+        }
     }
 
     /*
