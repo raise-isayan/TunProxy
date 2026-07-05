@@ -14,7 +14,12 @@ TunProxyアプリを起動すると以下の画面が起動します。
 
 ![Tun Proxy](images/TunProxy.png)
 
-* Proxy address (IPv4:port)
+* Profile 選択
+  * 選択したプロファイルを適用します。
+  * Manual
+    * 手動で設定します。
+
+* Proxy address (host:port)
   * 接続先のプロキシサーバを ** host:port ** の形式で指定します。
      IPアドレスの場合はIPv4形式で記載する必要があります。
 
@@ -23,7 +28,6 @@ TunProxyアプリを起動すると以下の画面が起動します。
      HTTPプロキシとして接続します。
   * SOCKS5
      SOCKS5プロキシとして接続します。
-
 
 * [Start] ボタン
   * 接続を開始します。
@@ -114,6 +118,32 @@ DNSサーバの設定を行います。
 
 * Secondary DNS
   * セカンダリDNSを指定します。
+
+## Profile Settings
+
+### Profile Lis
+
+プロファイルの一覧が表示されます。
+
+![Profile New](images/Menu-Profile-List.png)
+
+### Profile New
+
+プロファイルを新規作成します。
+
+![Profile New](images/Menu-Profile-New.png)
+
+### Profile Edit
+
+プロファイルを編集します。
+
+![Profile New](images/Menu-Profile-Edit.png)
+
+### Profile Delete
+
+プロファイルを削除します。
+
+![Profile New](images/Menu-Profile-Delete.png)
 
 ## About
 

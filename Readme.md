@@ -12,6 +12,11 @@ When you start the TunProxy application, the following screen will be launched.
 
 ![Tun Proxy](images/TunProxy.png)
 
+* Select Profile
+  * Apply the selected profile.
+  * Manual
+    * Configure it manually.
+
 * Proxy address (host:port)
   * Specify the destination proxy server in the format ** host:port r**.
     When you specify an IP address, use the IPv4 format.
@@ -105,6 +110,32 @@ Configure the DNS server settings.
 
 * Secondary DNS
   * Specify the secondary DNS server.
+
+## Profile Settings
+
+### Profile List
+
+List view of profiles.
+
+![Profile New](images/Menu-Profile-List.png)
+
+### Profile New
+
+Create a new profile.
+
+![Profile New](images/Menu-Profile-New.png)
+
+### Profile Edit
+
+Edit Profile
+
+![Profile New](images/Menu-Profile-Edit.png)
+
+### Profile Delete
+
+Delete Profile
+
+![Profile New](images/Menu-Profile-Delete.png)
 
 ## About
 
