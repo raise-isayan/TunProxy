@@ -6,8 +6,6 @@ import org.junit.Test;
 
 import java.util.EnumSet;
 
-import tun.utils.IPUtil;
-
 /**
  * Example local unit test, which will execute on the development machine (host).
  *

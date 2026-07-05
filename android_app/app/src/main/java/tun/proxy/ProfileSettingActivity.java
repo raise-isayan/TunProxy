@@ -22,7 +22,7 @@ import androidx.appcompat.widget.Toolbar;
 import java.util.List;
 import java.util.Locale;
 
-import tun.utils.IPUtil;
+import tun.utils.NetUtil;
 
 public class ProfileSettingActivity extends AppCompatActivity {
 
@@ -141,7 +141,7 @@ public class ProfileSettingActivity extends AppCompatActivity {
                 textError.setVisibility(View.VISIBLE);
                 return;
             }
-            if (!IPUtil.isValidHostPort(hostPort)) {
+            if (!NetUtil.isValidHostPort(hostPort)) {
                 textError.setText(R.string.profile_error_format);
                 textError.setVisibility(View.VISIBLE);
                 return;

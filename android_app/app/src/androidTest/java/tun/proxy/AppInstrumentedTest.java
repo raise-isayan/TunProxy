@@ -12,7 +12,7 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
-import tun.utils.Util;
+import tun.utils.NetUtil;
 
 import static org.junit.Assert.*;
 
@@ -40,7 +40,7 @@ public class AppInstrumentedTest {
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         assertEquals("tun.proxy", appContext.getPackageName());
 
-        List<String> dnsList = Util.getDefaultDNS(appContext);
+        List<String> dnsList = NetUtil.getDefaultDNS(appContext);
         System.out.println("dnsList:" + dnsList.size());
         for (String dns : dnsList) {
             System.out.println("dns:" + dns);

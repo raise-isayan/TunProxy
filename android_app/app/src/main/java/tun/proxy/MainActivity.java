@@ -26,7 +26,6 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.text.TextUtils;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -42,7 +41,7 @@ import java.util.List;
 import java.util.Locale;
 
 import tun.proxy.service.Tun2HttpVpnService;
-import tun.utils.IPUtil;
+import tun.utils.NetUtil;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -282,7 +281,7 @@ public class MainActivity extends AppCompatActivity {
             int port = prefs.getInt(Tun2HttpVpnService.PREF_PROXY_PORT, -1);
 
             new Thread(() -> {
-                boolean resolvable = IPUtil.resolvHost(host);
+                boolean resolvable = NetUtil.resolvHost(host);
                 if (!resolvable) {
                     runOnUiThread(() -> {
                         Toast.makeText(this, "DNS resolution failed for " + host, Toast.LENGTH_SHORT).show();
@@ -292,7 +291,7 @@ public class MainActivity extends AppCompatActivity {
                 if (connectivityCheck) {
                     boolean reachable = false;
                     if (service != null && service.isNetworkConnected()) {
-                        reachable = IPUtil.isConnection(host, port);
+                        reachable = NetUtil.isConnection(host, port);
                     }
                     if (!reachable) {
                         runOnUiThread(() -> {
@@ -329,7 +328,7 @@ public class MainActivity extends AppCompatActivity {
         String proxyTypeName = prefs.getString(Tun2HttpVpnService.PREF_PROXY_TYPE, MyApplication.ProxyType.HTTP.name());
         MyApplication.ProxyType proxyType = Enum.valueOf(MyApplication.ProxyType.class, proxyTypeName);
 
-        if (!IPUtil.isValidHost(proxyHost) || !IPUtil.isValiPort(proxyPort)) {
+        if (!NetUtil.isValidHost(proxyHost) || !NetUtil.isValiPort(proxyPort)) {
             return;
         }
         hostEditText.setText(String.format(Locale.ROOT,"%s:%d", proxyHost, proxyPort));
@@ -339,7 +338,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean parseAndSaveHostPort() {
         String proxyTarget = hostEditText.getText().toString();
-        if (!IPUtil.isValidHostPort(proxyTarget)) {
+        if (!NetUtil.isValidHostPort(proxyTarget)) {
             hostEditText.setError(getString(R.string.enter_host));
             return false;
         }

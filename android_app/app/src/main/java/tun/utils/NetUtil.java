@@ -1,5 +1,9 @@
 package tun.utils;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.LinkProperties;
+import android.net.Network;
 import android.util.Log;
 
 import java.io.IOException;
@@ -10,8 +14,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class IPUtil {
-    private static final String TAG = "Tun2Http.IPUtil";
+public class NetUtil {
+    private static final String TAG = "Tun2Http.NetUtil";
 
     public static boolean isConnection(String host, int port) {
         boolean reachable = false;
@@ -170,6 +174,35 @@ public class IPUtil {
         return long2inet(inet2long(addr) + 1);
     }
 
+    private static native String jni_getprop(String name);
+
+    public static List<String> getDefaultDNS(Context applicationContext) {
+        List<String> dnsServers = new ArrayList<>();
+        // ConnectivityManagerの取得
+        ConnectivityManager cm = (ConnectivityManager) applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm == null) {
+            return dnsServers;
+        }
+
+        // 現在アクティブなネットワークを取得
+        Network activeNetwork = cm.getActiveNetwork();
+        if (activeNetwork == null) {
+            return dnsServers;
+        }
+        // ネットワークのリンクプロパティ（DNS情報などを含む）を取得
+        LinkProperties linkProperties = cm.getLinkProperties(activeNetwork);
+        if (linkProperties == null) {
+            return dnsServers;
+        }
+        // DNSサーバーのリスト（InetAddress形式）を取得
+        List<InetAddress> dnsAddresses = linkProperties.getDnsServers();
+        for (InetAddress dnsAddress : dnsAddresses) {
+            // ホスト名/IPアドレスの文字列を取得（IPv4/IPv6 両対応）
+            dnsServers.add(dnsAddress.getHostAddress());
+        }
+        return dnsServers;
+    }
+
     public static class CIDR implements Comparable<CIDR> {
         public InetAddress address;
         public int prefix;
@@ -203,9 +236,11 @@ public class IPUtil {
 
         @Override
         public int compareTo(CIDR other) {
-            Long lcidr = IPUtil.inet2long(this.address);
-            Long lother = IPUtil.inet2long(other.address);
+            Long lcidr = NetUtil.inet2long(this.address);
+            Long lother = NetUtil.inet2long(other.address);
             return lcidr.compareTo(lother);
         }
+
+
     }
 }

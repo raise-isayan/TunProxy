@@ -10,7 +10,6 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.VpnService;
 import android.os.Binder;
-import android.os.Build;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.ParcelFileDescriptor;
@@ -34,8 +33,7 @@ import java.util.Set;
 
 import tun.proxy.MyApplication;
 import tun.proxy.R;
-import tun.utils.IPUtil;
-import tun.utils.Util;
+import tun.utils.NetUtil;
 
 @SuppressLint("VpnServicePolicy")
 public class Tun2HttpVpnService extends VpnService {
@@ -179,7 +177,7 @@ public class Tun2HttpVpnService extends VpnService {
                 builder.addDnsServer(dns2);
             }
         } else {
-            List<String> dnsList = Util.getDefaultDNS(app.getApplicationContext());
+            List<String> dnsList = NetUtil.getDefaultDNS(app.getApplicationContext());
             for (String dns : dnsList) {
                 Log.i(TAG, "default DNS:" + dns);
                 builder.addDnsServer(dns);
@@ -223,7 +221,7 @@ public class Tun2HttpVpnService extends VpnService {
         final MyApplication.ProxyType proxyType = Enum.valueOf(MyApplication.ProxyType.class, proxyTypeName);
         final boolean isSocks5 = MyApplication.ProxyType.SOCKS5.equals(proxyType);
 
-        if (IPUtil.isValidHost(proxyHost) && IPUtil.isValiPort(proxyPort)) {
+        if (NetUtil.isValidHost(proxyHost) && NetUtil.isValiPort(proxyPort)) {
             new Thread(() -> {
                 String proxyIp = "";
                 try {
