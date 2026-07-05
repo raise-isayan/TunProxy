@@ -1,8 +1,8 @@
-
-
 #include "tun2http.h"
 
 extern int loglevel;
+
+#define LOG_TAG "tun2http_naitive"
 
 uint16_t calc_checksum(uint16_t start, const uint8_t *buffer, size_t length) {
     register uint32_t sum = start;
@@ -48,7 +48,10 @@ int sdk_int(JNIEnv *env) {
 }
 
 void log_android(int prio, const char *fmt, ...) {
-
+    va_list args;
+    va_start(args, fmt);
+    __android_log_vprint(prio, LOG_TAG, fmt, args);
+    va_end(args);
 }
 
 uint8_t char2nible(const char c) {
