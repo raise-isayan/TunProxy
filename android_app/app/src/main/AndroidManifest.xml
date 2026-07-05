@@ -41,9 +41,8 @@
         </activity>
 
         <activity
-            android:name=".ProfileSettingActivity"
-            android:label="Profile Setting"
-            android:theme="@style/AppTheme.NoActionBar"
+            android:name=".ProfileSettingsActivity"
+            android:label="@string/title_profile_settings"
             android:parentActivityName=".MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

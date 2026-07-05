@@ -1,5 +1,6 @@
 package tun.proxy;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -13,18 +14,23 @@ import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import androidx.activity.EdgeToEdge;
+import androidx.activity.SystemBarStyle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import java.util.List;
 import java.util.Locale;
 
 import tun.utils.NetUtil;
 
-public class ProfileSettingActivity extends AppCompatActivity {
+public class ProfileSettingsActivity extends AppCompatActivity {
 
     private ArrayAdapter<ProfileItem> adapter;
     private List<ProfileItem> profileList;
@@ -32,13 +38,19 @@ public class ProfileSettingActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_profile_setting);
+        EdgeToEdge.enable(this, SystemBarStyle.dark(Color.TRANSPARENT));
+        setContentView(R.layout.activity_profile_settings);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle(R.string.title_profile_settings);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.profile_setting_container), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
+
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setTitle(R.string.title_profile_settings);
         }
 
         ListView listView = findViewById(R.id.profile_list);
@@ -68,7 +80,7 @@ public class ProfileSettingActivity extends AppCompatActivity {
 
                     btnEdit.setOnClickListener(v -> showProfileEditDialog(item, position));
                     btnDelete.setOnClickListener(v -> {
-                        new AlertDialog.Builder(ProfileSettingActivity.this)
+                        new AlertDialog.Builder(ProfileSettingsActivity.this)
                                 .setTitle(R.string.profile_delete_title)
                                 .setMessage(R.string.profile_delete_msg)
                                 .setPositiveButton(android.R.string.ok, (dialog, which) -> {
@@ -88,7 +100,7 @@ public class ProfileSettingActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_profile_setting, menu);
+        getMenuInflater().inflate(R.menu.menu_profile_settings, menu);
         return true;
     }
 

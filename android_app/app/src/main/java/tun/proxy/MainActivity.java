@@ -171,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new android.content.Intent(this, SettingsActivity.class);
             startActivity(intent);
         } else if (item_id == R.id.action_profile_settings) {
-            Intent intent = new Intent(this, ProfileSettingActivity.class);
+            Intent intent = new Intent(this, ProfileSettingsActivity.class);
             startActivity(intent);
         } else if (item_id == R.id.action_show_about) {
             new AlertDialog.Builder(this)
