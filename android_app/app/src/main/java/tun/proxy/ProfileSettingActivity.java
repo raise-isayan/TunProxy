@@ -40,7 +40,25 @@ public class ProfileSettingActivity extends AppCompatActivity {
 
         ListView listView = findViewById(R.id.profile_list);
         profileList = MyApplication.getInstance().loadProfiles();
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, profileList);
+        adapter = new ArrayAdapter<ProfileItem>(this, R.layout.item_profile, profileList) {
+            @Override
+            public View getView(int position, View convertView, android.view.ViewGroup parent) {
+                if (convertView == null) {
+                    convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_profile, parent, false);
+                }
+                ProfileItem item = getItem(position);
+                if (item != null) {
+                    TextView textName = convertView.findViewById(R.id.text_name);
+                    TextView textHostPort = convertView.findViewById(R.id.text_host_port);
+                    TextView textType = convertView.findViewById(R.id.text_type);
+
+                    textName.setText(item.getName());
+                    textHostPort.setText(String.format(Locale.ROOT, "%s:%d", item.getHost(), item.getPort()));
+                    textType.setText(item.getType().name());
+                }
+                return convertView;
+            }
+        };
         listView.setAdapter(adapter);
 
         listView.setOnItemClickListener((parent, view, position, id) -> {

@@ -217,7 +217,7 @@ public class MainActivity extends AppCompatActivity {
         if (profileList != null) {
             int selected = profileSpinner.getSelectedItemPosition();
             profileList.clear();
-            profileList.add(new ProfileItem(getString(R.string.profile_manual), "", 0, MyApplication.ProxyType.HTTP));
+            profileList.add(new ProfileItem(getString(R.string.profile_manual), "", -1, MyApplication.ProxyType.HTTP));
             profileList.addAll(MyApplication.getInstance().loadProfiles());
             profileAdapter.notifyDataSetChanged();
             if (selected < profileList.size()) {
