@@ -290,7 +290,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if (connectivityCheck) {
                     boolean reachable = false;
-                    if (service != null && service.isNetworkConnected()) {
+                    if (NetUtil.isNetworkCapabilities(service)) {
                         reachable = NetUtil.isConnection(host, port);
                     }
                     if (!reachable) {

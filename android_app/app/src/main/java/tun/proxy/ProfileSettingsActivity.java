@@ -148,8 +148,8 @@ public class ProfileSettingsActivity extends AppCompatActivity {
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             String name = editName.getText().toString();
             String hostPort = editHostPort.getText().toString();
-            if (name.isEmpty() || hostPort.isEmpty()) {
-                textError.setText(R.string.profile_error_fields);
+            if (name.isEmpty()) {
+                textError.setText(R.string.profile_error_name_fields);
                 textError.setVisibility(View.VISIBLE);
                 return;
             }
@@ -164,7 +164,6 @@ public class ProfileSettingsActivity extends AppCompatActivity {
                 textError.setVisibility(View.VISIBLE);
                 return;
             }
-
             try {
                 String host = parts[0];
                 int port = Integer.parseInt(parts[1]);

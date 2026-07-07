@@ -300,7 +300,7 @@ public class SettingsActivity extends AppCompatActivity implements
                     new AlertDialog.Builder(requireActivity())
                             .setTitle(getString(R.string.title_activity_settings))
                             .setMessage(getString(R.string.vpn_dialog_clear_all_application_msg))
-                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
                                     Set<String> set = new HashSet<>();
@@ -309,7 +309,7 @@ public class SettingsActivity extends AppCompatActivity implements
                                     updateMenuItem();
                                 }
                             })
-                            .setNegativeButton("Cancel", null)
+                            .setNegativeButton(android.R.string.cancel, null)
                             .show();
                     break;
             }

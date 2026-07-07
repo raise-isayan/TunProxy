@@ -4,6 +4,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.LinkProperties;
 import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.util.Log;
 
 import java.io.IOException;
@@ -30,6 +31,22 @@ public class NetUtil {
         return reachable;
     }
 
+    public static boolean isNetworkCapabilities(Context context) {
+        if (context != null) {
+            final ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm != null) {
+                final Network n = cm.getActiveNetwork();
+                if (n != null) {
+                    final NetworkCapabilities nc = cm.getNetworkCapabilities(n);
+                    if (nc != null) {
+                        return (nc.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) || nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI));
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     public static boolean resolvHost(String hostName) {
         boolean resolvable = false;
         try {
@@ -40,7 +57,6 @@ public class NetUtil {
         }
         return resolvable;
     }
-
 
     public static boolean isValidIPv4Address(String ipv4) {
         if (ipv4.isEmpty()) {
@@ -69,7 +85,7 @@ public class NetUtil {
         if (address == null || address.isEmpty()) {
             return false;
         }
-        String [] parts = address.split(":");
+        String[] parts = address.split(":");
         if (parts.length != 2) {
             return false;
         }

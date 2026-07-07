@@ -63,9 +63,9 @@ public class MyApplicationTest {
         assertFalse(app.loadUseDnsCustom());
 
         app.storePrimaryDns("1.1.1.1");
-        assertEquals("1.1.1.1" , app.loadPrimaryDns(""));
+        assertEquals("1.1.1.1", app.loadPrimaryDns(""));
         app.storeSecondaryDns("1.1.1.2");
-        assertEquals("1.1.1.2" , app.loadSecondaryDns(""));
+        assertEquals("1.1.1.2", app.loadSecondaryDns(""));
     }
 
     @Test

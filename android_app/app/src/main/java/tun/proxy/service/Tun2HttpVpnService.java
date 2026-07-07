@@ -92,20 +92,6 @@ public class Tun2HttpVpnService extends VpnService {
         return vpn != null;
     }
 
-    public boolean isNetworkConnected() {
-        final ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (cm != null) {
-            final Network n = cm.getActiveNetwork();
-            if (n != null) {
-                final NetworkCapabilities nc = cm.getNetworkCapabilities(n);
-                if (nc != null) {
-                    return (nc.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) || nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI));
-                }
-            }
-        }
-        return false;
-    }
-
     private void start() {
         if (vpn == null) {
             Builder lastBuilder = getBuilder();

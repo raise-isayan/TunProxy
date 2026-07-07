@@ -73,9 +73,9 @@
     <string name="profile_new">New</string>
     <string name="profile_new_title">New Profile</string>
     <string name="profile_edit_title">Edit Profile</string>
-    <string name="profile_error_fields">Please enter all fields</string>
+    <string name="profile_error_name_fields">Please enter name fields</string>
     <string name="profile_error_format">Invalid Host:Port format</string>
-    <string name="profile_error_port">Invalid port number</string>
+    <string name="profile_error_port">Invalid port number(0 &gt;= port &gt;= 65536)</string>
     <string name="profile_item_edit">Edit</string>
     <string name="profile_item_delete">Delete</string>
     <string name="menu_profile_settings">Profile Settings</string>

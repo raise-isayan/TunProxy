@@ -1,17 +1,59 @@
-package tun.proxy;
+package tun.utils;
 
 import org.junit.Test;
 
-import tun.utils.NetUtil;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
-/**
- * Example local unit test, which will execute on the development machine (host).
- *
- * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
- */
-public class IPUtilTest {
+public class NetUtilTest {
+
+    @Test
+    public void testIsValidHostPort() {
+        assertFalse(NetUtil.isValidHostPort(""));
+        assertFalse(NetUtil.isValidHostPort("127.0.0.1"));
+        assertFalse(NetUtil.isValidHostPort("127.0.0.1:"));
+        assertTrue(NetUtil.isValidHostPort("127.0.0.1:0"));
+        assertTrue(NetUtil.isValidHostPort("127.0.0.1:1"));
+        assertTrue(NetUtil.isValidHostPort("127.0.0.1:65535"));
+        assertFalse(NetUtil.isValidHostPort("127.0.0.1:65536"));
+        assertFalse(NetUtil.isValidHostPort("127:8000"));
+        assertTrue(NetUtil.isValidHostPort("www.example.com:8000"));
+        assertTrue(NetUtil.isValidHostPort("localhost:8080"));
+    }
+
+    @Test
+    public void testIsValiPort() {
+        assertTrue(NetUtil.isValiPort(0));
+        assertTrue(NetUtil.isValiPort(80));
+        assertTrue(NetUtil.isValiPort(65535));
+        assertFalse(NetUtil.isValiPort(-1));
+        assertFalse(NetUtil.isValiPort(65536));
+    }
+
+    @Test
+    public void testPlusMinus1() throws UnknownHostException {
+        InetAddress addr = InetAddress.getByName("127.0.0.1");
+        InetAddress next = NetUtil.plus1(addr);
+        assertEquals("127.0.0.2", next.getHostAddress());
+
+        InetAddress prev = NetUtil.minus1(next);
+        assertEquals("127.0.0.1", prev.getHostAddress());
+    }
+
+    @Test
+    public void testToCIDR() throws UnknownHostException {
+        List<NetUtil.CIDR> cidrs = NetUtil.toCIDR("192.168.1.0", "192.168.1.255");
+        assertEquals(1, cidrs.size());
+        assertEquals("192.168.1.0/24", cidrs.get(0).address.getHostAddress() + "/" + cidrs.get(0).prefix);
+
+        cidrs = NetUtil.toCIDR("192.168.1.1", "192.168.1.1");
+        assertEquals(1, cidrs.size());
+        assertEquals("192.168.1.1/32", cidrs.get(0).address.getHostAddress() + "/" + cidrs.get(0).prefix);
+    }
+
 
     @Test
     public void testIsValidPostPort() {
@@ -55,4 +97,5 @@ public class IPUtilTest {
         assertFalse(NetUtil.isValidIPv4Address("192.256.2.11"));
         assertFalse(NetUtil.isValidHostPort("www.example.com"));
     }
+
 }
