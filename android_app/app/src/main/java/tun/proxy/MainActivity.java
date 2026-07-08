@@ -133,10 +133,9 @@ public class MainActivity extends AppCompatActivity {
                 if (position == 0) { // "Manual"
                     hostEditText.setText("");
                     proxyTypeSpinner.setSelection(MyApplication.ProxyType.HTTP.ordinal());
-                }
-                else if (position > 0) { // Not "Manual"
+                } else if (position > 0) { // Not "Manual"
                     ProfileItem profile = profileList.get(position);
-                    hostEditText.setText(String.format(Locale.ROOT, "%s:%d", profile.getHost(), profile.getPort()));
+                    hostEditText.setText(HostPortPair.valueOf(profile.getHost(), profile.getPort()));
                     proxyTypeSpinner.setSelection(profile.getType().ordinal());
                 }
             }
@@ -331,9 +330,8 @@ public class MainActivity extends AppCompatActivity {
         if (!NetUtil.isValidHost(proxyHost) || !NetUtil.isValiPort(proxyPort)) {
             return;
         }
-        hostEditText.setText(String.format(Locale.ROOT,"%s:%d", proxyHost, proxyPort));
+        hostEditText.setText(HostPortPair.valueOf(proxyHost, proxyPort));
         proxyTypeSpinner.setSelection(proxyType.ordinal());
-
     }
 
     private boolean parseAndSaveHostPort() {
@@ -342,26 +340,22 @@ public class MainActivity extends AppCompatActivity {
             hostEditText.setError(getString(R.string.enter_host));
             return false;
         }
-        // host:port 分離
-        String[] parts = proxyTarget.split(":");
-        int port = -1; // デフォルト値にはならないはず
-        if (parts.length > 1) {
-            try {
-                port = Integer.parseInt(parts[1]);
-            } catch (NumberFormatException e) {
-                hostEditText.setError(getString(R.string.enter_host));
-                return false;
-            }
+        try {
+            // host:port 分離
+            HostPortPair hostPortPair = HostPortPair.parse(proxyTarget);
+            String host = hostPortPair.getHost();
+            int port = hostPortPair.getPort();
+            String proxyType = (String) proxyTypeSpinner.getSelectedItem();
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            SharedPreferences.Editor edit = prefs.edit();
+            edit.putString(Tun2HttpVpnService.PREF_PROXY_HOST, host);
+            edit.putInt(Tun2HttpVpnService.PREF_PROXY_PORT, port);
+            edit.putString(Tun2HttpVpnService.PREF_PROXY_TYPE, proxyType);
+            edit.apply();
+        } catch (NumberFormatException e) {
+            hostEditText.setError(getString(R.string.enter_host));
+            return false;
         }
-        String host = parts[0];
-        String proxyType = (String) proxyTypeSpinner.getSelectedItem();
-
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor edit = prefs.edit();
-        edit.putString(Tun2HttpVpnService.PREF_PROXY_HOST, host);
-        edit.putInt(Tun2HttpVpnService.PREF_PROXY_PORT, port);
-        edit.putString(Tun2HttpVpnService.PREF_PROXY_TYPE, proxyType);
-        edit.apply();
         return true;
     }
 

@@ -23,6 +23,16 @@ public class ProfileItemTest {
         assertEquals(item.getHost(), item2.getHost());
         assertEquals(item.getPort(), item2.getPort());
         assertEquals(item.getType(), item2.getType());
+
+        item.setName("Edit Profile");
+        item.setHost("192.168.0.2");
+        item.setPort(1080);
+        item.setType(MyApplication.ProxyType.SOCKS5);
+
+        assertEquals("Edit Profile", item.getName());
+        assertEquals("192.168.0.2", item.getHost());
+        assertEquals(1080, item.getPort());
+        assertEquals(MyApplication.ProxyType.SOCKS5, item.getType());
     }
 
     @Test

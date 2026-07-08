@@ -5,16 +5,18 @@ import org.json.JSONObject;
 
 import java.io.Serializable;
 
+import tun.proxy.service.Tun2HttpVpnService;
+
 public class ProfileItem implements Serializable {
     private String name;
-    private String host;
-    private int port;
+//    private String host;
+//    private int port;
+    private final HostPortPair hostPort;
     private MyApplication.ProxyType type;
 
     public ProfileItem(String name, String host, int port, MyApplication.ProxyType type) {
         this.name = name;
-        this.host = host;
-        this.port = port;
+        this.hostPort = new HostPortPair(host, port);
         this.type = type;
     }
 
@@ -27,19 +29,19 @@ public class ProfileItem implements Serializable {
     }
 
     public String getHost() {
-        return host;
+        return this.hostPort.getHost();
     }
 
     public void setHost(String host) {
-        this.host = host;
+        this.hostPort.setHost(host);
     }
 
     public int getPort() {
-        return port;
+        return this.hostPort.getPort();
     }
 
     public void setPort(int port) {
-        this.port = port;
+        this.hostPort.setPort(port);
     }
 
     public MyApplication.ProxyType getType() {
@@ -53,8 +55,8 @@ public class ProfileItem implements Serializable {
     public JSONObject toJSONObject() throws JSONException {
         JSONObject obj = new JSONObject();
         obj.put("name", name);
-        obj.put("host", host);
-        obj.put("port", port);
+        obj.put("host", this.hostPort.getHost());
+        obj.put("port", this.hostPort.getPort());
         obj.put("type", type.name());
         return obj;
     }
@@ -71,5 +73,23 @@ public class ProfileItem implements Serializable {
     @Override
     public String toString() {
         return name;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        ProfileItem other =  (ProfileItem)obj;
+        if (other == null)
+            return false;
+
+        if (!this.name.equals(other.name))
+            return false;
+
+        if (!this.hostPort.equals(other.hostPort))
+            return false;
+
+        if (this.type != other.getType())
+            return false;
+
+        return true;
     }
 }

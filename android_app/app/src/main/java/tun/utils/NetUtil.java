@@ -8,12 +8,15 @@ import android.net.NetworkCapabilities;
 import android.util.Log;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+
+import tun.proxy.HostPortPair;
 
 public class NetUtil {
     private static final String TAG = "Tun2Http.NetUtil";
@@ -81,25 +84,22 @@ public class NetUtil {
         return true;
     }
 
-    public static boolean isValidHostPort(String address) {
-        if (address == null || address.isEmpty()) {
+    public static boolean isValidHostPort(String hostPort) {
+        if (hostPort == null || hostPort.isEmpty()) {
             return false;
         }
-        String[] parts = address.split(":");
-        if (parts.length != 2) {
-            return false;
-        }
-        int port = -1;
         try {
-            port = Integer.parseInt(parts[1]);
+            HostPortPair hostPortPair = HostPortPair.parse(hostPort);
+            if (!(isValidIPv4Address(hostPortPair.getHost()) || isDomain(hostPortPair.getHost()))) {
+                return false;
+            }
+            if (!isValiPort(hostPortPair.getPort())) {
+                return false;
+            }
         } catch (NumberFormatException e) {
             return false;
         }
-        if (!isValiPort(port)) {
-            return false;
-        }
-        String host = parts[0];
-        return isValidIPv4Address(host) || isDomain(host);
+        return true;
     }
 
     public static boolean isValiPort(int port) {
@@ -141,16 +141,16 @@ public class NetUtil {
                     break;
                 prefix--;
             }
-
             byte max = (byte) (32 - Math.floor(Math.log(to - from + 1) / Math.log(2)));
             if (prefix < max)
                 prefix = max;
 
             listResult.add(new CIDR(long2inet(from), prefix));
 
-            from += Math.pow(2, (32 - prefix));
+            BigInteger p = BigInteger.valueOf(2).pow(32 - prefix);
+            from += p.longValue();
+//            from += (long) Math.pow(2, (32 - prefix));
         }
-
         for (CIDR cidr : listResult)
             Log.i(TAG, cidr.toString());
 
@@ -247,7 +247,7 @@ public class NetUtil {
 
         @Override
         public String toString() {
-            return address.getHostAddress() + "/" + prefix + "=" + getStart().getHostAddress() + "..." + getEnd().getHostAddress();
+            return this.address.getHostAddress() + "/" + this.prefix + "=" + getStart().getHostAddress() + "..." + getEnd().getHostAddress();
         }
 
         @Override

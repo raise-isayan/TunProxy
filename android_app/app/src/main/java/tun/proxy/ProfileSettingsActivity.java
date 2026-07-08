@@ -71,7 +71,7 @@ public class ProfileSettingsActivity extends AppCompatActivity {
                     ImageButton btnDelete = convertView.findViewById(R.id.btn_delete);
 
                     textName.setText(item.getName());
-                    textHostPort.setText(String.format(Locale.ROOT, "%s:%d", item.getHost(), item.getPort()));
+                    textHostPort.setText(HostPortPair.valueOf(item.getHost(), item.getPort()));
                     textType.setText(item.getType().name());
 
                     boolean running = MyApplication.getInstance().loadProxyRunning(false);
@@ -132,7 +132,7 @@ public class ProfileSettingsActivity extends AppCompatActivity {
 
         if (profile != null) {
             editName.setText(profile.getName());
-            editHostPort.setText(String.format(Locale.ROOT, "%s:%d", profile.getHost(), profile.getPort()));
+            editHostPort.setText(HostPortPair.valueOf(profile.getHost(), profile.getPort()));
             spinnerType.setSelection(profile.getType().ordinal());
         }
 
@@ -158,17 +158,16 @@ public class ProfileSettingsActivity extends AppCompatActivity {
                 textError.setVisibility(View.VISIBLE);
                 return;
             }
-            String[] parts = hostPort.split(":");
-            if (parts.length < 2) {
-                textError.setText(R.string.profile_error_format);
-                textError.setVisibility(View.VISIBLE);
-                return;
-            }
             try {
-                String host = parts[0];
-                int port = Integer.parseInt(parts[1]);
+                HostPortPair hostPortPair = HostPortPair.parse(hostPort);
+                String host = hostPortPair.getHost();
+                int port = hostPortPair.getPort();
+                if (!NetUtil.isValiPort(port)) {
+                    textError.setText(R.string.profile_error_port);
+                    textError.setVisibility(View.VISIBLE);
+                    return;
+                }
                 MyApplication.ProxyType type = MyApplication.ProxyType.values()[spinnerType.getSelectedItemPosition()];
-
                 if (profile == null) {
                     profileList.add(new ProfileItem(name, host, port, type));
                 } else {
@@ -181,7 +180,7 @@ public class ProfileSettingsActivity extends AppCompatActivity {
                 adapter.notifyDataSetChanged();
                 dialog.dismiss();
             } catch (NumberFormatException e) {
-                textError.setText(R.string.profile_error_port);
+                textError.setText(R.string.profile_error_format);
                 textError.setVisibility(View.VISIBLE);
             }
         });

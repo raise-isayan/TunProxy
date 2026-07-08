@@ -297,6 +297,7 @@ public class SettingsActivity extends AppCompatActivity implements
                 case VPN_ALLOWED_APPLICATION_LIST:
                     break;
                 case VPN_CLEAR_ALL_SELECTION:
+                {
                     new AlertDialog.Builder(requireActivity())
                             .setTitle(getString(R.string.title_activity_settings))
                             .setMessage(getString(R.string.vpn_dialog_clear_all_application_msg))
@@ -312,6 +313,7 @@ public class SettingsActivity extends AppCompatActivity implements
                             .setNegativeButton(android.R.string.cancel, null)
                             .show();
                     break;
+                }
             }
             return false;
         }
@@ -730,21 +732,25 @@ public class SettingsActivity extends AppCompatActivity implements
                     String t1 = "";
                     String t2 = "";
                     switch (sortBy) {
-                        case APPNAME:
+                        case APPNAME: {
                             assert o1.applicationInfo != null;
                             t1 = o1.applicationInfo.loadLabel(pm).toString();
                             assert o2.applicationInfo != null;
                             t2 = o2.applicationInfo.loadLabel(pm).toString();
                             break;
-                        case PKGNAME:
+                        }
+                        case PKGNAME: {
                             t1 = o1.packageName;
                             t2 = o2.packageName;
                             break;
+                        }
                     }
-                    if (MyApplication.AppOrderBy.ASC.equals(orderBy))
+                    if (MyApplication.AppOrderBy.ASC.equals(orderBy)) {
                         return t1.compareTo(t2);
-                    else
+                    }
+                    else {
                         return t2.compareTo(t1);
+                    }
                 }
             });
             final Map<String, Boolean> installedPackageMap = new HashMap<>();
