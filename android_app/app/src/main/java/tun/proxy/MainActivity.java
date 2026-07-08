@@ -157,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem itemSettings = menu.findItem(R.id.action_activity_settings);
         MenuItem itemProfile = menu.findItem(R.id.action_profile_settings);
-        boolean enabled = startButton.isEnabled();
+        boolean enabled = this.startButton.isEnabled();
         if (itemSettings != null) itemSettings.setEnabled(enabled);
         if (itemProfile != null) itemProfile.setEnabled(enabled);
         return true;

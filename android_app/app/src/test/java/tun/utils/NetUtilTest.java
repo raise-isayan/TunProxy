@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 public class NetUtilTest {
 
     @Test
-    public void testIsValidHostPort() {
+    public void testIsValidPostPort() {
         assertFalse(NetUtil.isValidHostPort(""));
         assertFalse(NetUtil.isValidHostPort("127.0.0.1"));
         assertFalse(NetUtil.isValidHostPort("127.0.0.1:"));
@@ -20,6 +20,10 @@ public class NetUtilTest {
         assertTrue(NetUtil.isValidHostPort("127.0.0.1:65535"));
         assertFalse(NetUtil.isValidHostPort("127.0.0.1:65536"));
         assertFalse(NetUtil.isValidHostPort("127:8000"));
+        assertFalse(NetUtil.isValidHostPort("127.0:8000"));
+        assertFalse(NetUtil.isValidHostPort("127.0.0.0.1:8000"));
+        assertTrue(NetUtil.isValidHostPort("127.255.0.1:8000"));
+        assertFalse(NetUtil.isValidHostPort("127.256.0.1:8000"));
         assertTrue(NetUtil.isValidHostPort("www.example.com:8000"));
         assertTrue(NetUtil.isValidHostPort("localhost:8080"));
     }
@@ -54,26 +58,6 @@ public class NetUtilTest {
         assertEquals("192.168.1.1/32", cidrs.get(0).address.getHostAddress() + "/" + cidrs.get(0).prefix);
     }
 
-
-    @Test
-    public void testIsValidPostPort() {
-        assertFalse(NetUtil.isValidHostPort(""));
-        assertFalse(NetUtil.isValidHostPort("127.0.0.1"));
-        // 1 <= port <= 65535
-        assertFalse(NetUtil.isValidHostPort("127.0.0.1:"));
-        assertTrue(NetUtil.isValidHostPort("127.0.0.1:0"));
-        assertTrue(NetUtil.isValidHostPort("127.0.0.1:1"));
-        assertTrue(NetUtil.isValidHostPort("127.0.0.1:65535"));
-        assertFalse(NetUtil.isValidHostPort("127.0.0.1:65536"));
-        assertFalse(NetUtil.isValidHostPort("127:8000"));
-        assertFalse(NetUtil.isValidHostPort("127.0:8000"));
-        assertFalse(NetUtil.isValidHostPort("127.0.0.0.1:8000"));
-        assertTrue(NetUtil.isValidHostPort("127.255.0.1:8000"));
-        assertFalse(NetUtil.isValidHostPort("127.256.0.1:8000"));
-        assertTrue(NetUtil.isValidHostPort("www.example.com:8000"));
-        assertTrue(NetUtil.isValidHostPort("localhost:8080"));
-    }
-
     @Test
     public void testIsDomain() {
         assertFalse(NetUtil.isDomain(""));
@@ -86,6 +70,10 @@ public class NetUtilTest {
     @Test
     public void testIsValidIPv4Address() {
         assertFalse(NetUtil.isValidIPv4Address(""));
+        assertFalse(NetUtil.isValidIPv4Address("192"));
+        assertFalse(NetUtil.isValidIPv4Address("192.168"));
+        assertFalse(NetUtil.isValidIPv4Address("192.168.0"));
+        assertFalse(NetUtil.isValidIPv4Address("192.168.0."));
         assertTrue(NetUtil.isValidIPv4Address("127.0.0.1"));
         assertFalse(NetUtil.isValidIPv4Address("127.0.0.1:"));
         assertFalse(NetUtil.isValidIPv4Address("127.0.0.1:0"));
@@ -95,7 +83,28 @@ public class NetUtilTest {
         assertFalse(NetUtil.isValidIPv4Address("192.168.2.256"));
         assertFalse(NetUtil.isValidIPv4Address("192.168.256.11"));
         assertFalse(NetUtil.isValidIPv4Address("192.256.2.11"));
-        assertFalse(NetUtil.isValidHostPort("www.example.com"));
+        assertFalse(NetUtil.isValidIPv4Address(null));
+    }
+
+    @Test
+    public void testIsValidIPv6Address() {
+        assertEquals(false, NetUtil.isValidIPv6Address(""));
+        assertEquals(true, NetUtil.isValidIPv6Address("::"));
+        assertEquals(true, NetUtil.isValidIPv6Address("::1"));
+        assertEquals(true, NetUtil.isValidIPv6Address("2001:0db8:85a3:0000:0000:8a2e:0370:7334"));
+        assertEquals(true, NetUtil.isValidIPv6Address("2001:0db8:85a3:0:0000:8a2e:370:7334"));
+        assertEquals(true, NetUtil.isValidIPv6Address("2001:db8:85a3:0:0:8a2e:370:7334"));
+        assertEquals(true, NetUtil.isValidIPv6Address("2001:db8:85a3::8a2e:370:7334"));
+        assertEquals(true, NetUtil.isValidIPv6Address("2001:db8::1:0:0:1"));
+        assertEquals(true, NetUtil.isValidIPv6Address("2001:0db8:0000:0000:3456::"));
+        assertEquals(true, NetUtil.isValidIPv6Address("2001:0112:0000:0000:0000:0000:0000:0030"));
+        assertEquals(true, NetUtil.isValidIPv6Address("[2001:0112:0000:0000:0000:0000:0000:0030]"));
+        assertEquals(false, NetUtil.isValidIPv6Address("[2001:0112:0000:0000:0000:0000:0000:0030"));
+        assertEquals(false, NetUtil.isValidIPv6Address("2001:0112:0000:0000:0000:0000:0000:0030]"));
+        assertEquals(false, NetUtil.isValidIPv6Address("[[2001:0112:0000:0000:0000:0000:0000:0030]]"));
+        assertEquals(false, NetUtil.isValidIPv6Address("2001:0db8::3456::"));
+        assertEquals(false, NetUtil.isValidIPv6Address("2001:0112::0011::0030"));
+        assertEquals(false, NetUtil.isValidIPv6Address(null));
     }
 
 }

@@ -28,6 +28,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle;
 import androidx.preference.*;
 
+import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -43,7 +44,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
+import tun.utils.NetUtil;
 import tun.utils.ProgressTask;
 
 public class SettingsActivity extends AppCompatActivity implements
@@ -235,33 +238,49 @@ public class SettingsActivity extends AppCompatActivity implements
             });
             final EditTextPreference prefDnsPrimary = this.findPreference(DNS_PRIMARY);
             assert prefDnsPrimary != null;
+            prefDnsPrimary.setOnBindEditTextListener(new EditTextPreference.OnBindEditTextListener() {
+                 @Override
+                 public void onBindEditText(@NonNull EditText editText) {
+                     editText.setSingleLine(true);
+                 }
+            });
             prefDnsPrimary.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     if (preference instanceof EditTextPreference) {
                         if (newValue instanceof String) {
-                            app.storePrimaryDns((String) newValue);
+                            String ipAddress = (String) newValue;
+                            if (NetUtil.isValidIPv4Address(ipAddress) || NetUtil.isValidIPv6Address(ipAddress)) {
+                                app.storePrimaryDns((String) newValue);
+                                return true;
+                            }
                         }
                     }
-                    return true;
+                    return false;
                 }
             });
             final EditTextPreference prefDnsSecondary = this.findPreference(DNS_SECONDARY);
             assert prefDnsSecondary != null;
+            prefDnsSecondary.setOnBindEditTextListener(new EditTextPreference.OnBindEditTextListener() {
+                @Override
+                public void onBindEditText(@NonNull EditText editText) {
+                    editText.setSingleLine(true);
+                }
+            });
             prefDnsSecondary.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
                     if (preference instanceof EditTextPreference) {
-                        if (newValue instanceof String) {
+                        String ipAddress = (String) newValue;
+                        if (NetUtil.isValidIPv4Address(ipAddress) || NetUtil.isValidIPv6Address(ipAddress)) {
                             app.storeSecondaryDns((String) newValue);
+                            return true;
                         }
                     }
-                    return true;
+                    return false;
                 }
             });
-
             updateMenuItem();
-
         }
 
         private void updateMenuItem() {
@@ -278,7 +297,6 @@ public class SettingsActivity extends AppCompatActivity implements
             prefDisallow.setSummary(getString(R.string.vpn_disallowed_application_count) + String.format(Locale.ROOT," %d", countDisallow));
             prefAllow.setTitle(getString(R.string.vpn_allowed_application_list));
             prefAllow.setSummary(getString(R.string.vpn_allowed_application_count) + String.format(Locale.ROOT, " %d", countAllow));
-
         }
 
         /*

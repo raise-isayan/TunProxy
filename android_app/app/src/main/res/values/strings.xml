@@ -79,5 +79,6 @@
     <string name="profile_item_edit">Edit</string>
     <string name="profile_item_delete">Delete</string>
     <string name="menu_profile_settings">Profile Settings</string>
+    <string name="invalid_ip_address">Invalid IP Address</string>
 
 </resources>

@@ -96,9 +96,9 @@ public class Tun2HttpVpnService extends VpnService {
         if (vpn == null) {
             Builder lastBuilder = getBuilder();
             vpn = startVPN(lastBuilder);
-            if (vpn == null)
+            if (vpn == null) {
                 throw new IllegalStateException(getString((R.string.msg_start_failed)));
-
+            }
             startNative(vpn);
         }
     }

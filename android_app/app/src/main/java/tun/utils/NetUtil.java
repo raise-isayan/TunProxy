@@ -62,7 +62,7 @@ public class NetUtil {
     }
 
     public static boolean isValidIPv4Address(String ipv4) {
-        if (ipv4.isEmpty()) {
+        if (ipv4 == null || ipv4.isEmpty()) {
             return false;
         }
         String[] ipParts = ipv4.split("\\.");
@@ -81,6 +81,104 @@ public class NetUtil {
                 }
             }
         }
+        return true;
+    }
+
+    public static boolean isValidIPv6Address(String ipv6) {
+        if (ipv6 == null || ipv6.isEmpty()) {
+            return false;
+        }
+
+        // --- 【追加】ブラケット [...] で囲まれている場合の処理 ---
+        if (ipv6.startsWith("[") && ipv6.endsWith("]")) {
+            // 中身が空（"[]"）なら不正
+            if (ipv6.length() == 2) {
+                return false;
+            }
+            // 角括弧を外して中身の文字列を取り出す
+            ipv6 = ipv6.substring(1, ipv6.length() - 1);
+        } else {
+            // 片方だけ角括弧があるような不正な形式（例: "[2001::" や "2001::]"）を弾く
+            if (ipv6.contains("[") || ipv6.contains("]")) {
+                return false;
+            }
+        }
+        // --------------------------------------------------
+
+        // 「::」そのものの場合は有効（未指定アドレス）
+        if (ipv6.equals("::")) {
+            return true;
+        }
+
+        // 先頭または末尾が ":" の場合の特殊処理
+        if (ipv6.startsWith(":")) {
+            if (!ipv6.startsWith("::")) return false;
+        }
+        if (ipv6.endsWith(":")) {
+            if (!ipv6.endsWith("::")) return false;
+        }
+
+        // "::" が何回使われているかを正確にカウント
+        int countDoubleColon = 0;
+        for (int i = 0; i < ipv6.length() - 1; i++) {
+            if (ipv6.charAt(i) == ':' && ipv6.charAt(i + 1) == ':') {
+                countDoubleColon++;
+                if (i + 2 < ipv6.length() && ipv6.charAt(i + 2) == ':') {
+                    return false;
+                }
+                i++;
+            }
+        }
+
+        if (countDoubleColon > 1) {
+            return false;
+        }
+
+        // splitする際、末尾の空要素を保持するために第二引数に -1 を指定
+        String[] parts = ipv6.split(":", -1);
+
+        boolean hasDoubleColon = countDoubleColon == 1;
+
+        // ブロック数の検証
+        if (hasDoubleColon) {
+            if (parts.length > 9 || parts.length < 3) {
+                return false;
+            }
+        } else {
+            if (parts.length != 8) {
+                return false;
+            }
+        }
+
+        int emptyCount = 0;
+
+        for (String part : parts) {
+            if (part.isEmpty()) {
+                emptyCount++;
+                if (emptyCount > 2) {
+                    return false;
+                }
+                continue;
+            }
+
+            if (part.length() > 4) {
+                return false;
+            }
+
+            try {
+                int value = Integer.parseInt(part, 16);
+                if (value < 0 || value > 0xFFFF) {
+                    return false;
+                }
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+
+        if (!hasDoubleColon && emptyCount > 0) {
+            return false;
+        }
+
         return true;
     }
 
