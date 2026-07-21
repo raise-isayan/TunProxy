@@ -65,7 +65,7 @@ public class NetUtil {
         if (ipv4 == null || ipv4.isEmpty()) {
             return false;
         }
-        String[] ipParts = ipv4.split("\\.");
+        String[] ipParts = ipv4.split("\\.", -1);
         if (ipParts.length != 4) {
             return false;
         } else {

@@ -80,6 +80,8 @@ public class NetUtilTest {
         assertFalse(NetUtil.isValidIPv4Address("127.0.0.1:1"));
         assertFalse(NetUtil.isValidIPv4Address("127.0.0.1:65535"));
         assertTrue(NetUtil.isValidIPv4Address("192.168.2.11"));
+        assertFalse(NetUtil.isValidIPv4Address(".192.168.2.11."));
+        assertFalse(NetUtil.isValidIPv4Address("192.168.2.11."));
         assertFalse(NetUtil.isValidIPv4Address("192.168.2.256"));
         assertFalse(NetUtil.isValidIPv4Address("192.168.256.11"));
         assertFalse(NetUtil.isValidIPv4Address("192.256.2.11"));
