@@ -29,7 +29,6 @@ public class CertificateUtilTest {
         byte[] original = new byte[]{0x48, 0x65, 0x6c, 0x6c, 0x6f}; // "Hello"
         String encoded = CertificateUtil.encode(original);
         byte[] decoded = CertificateUtil.decode(encoded);
-
         assertArrayEquals(original, decoded);
     }
 }

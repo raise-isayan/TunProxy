@@ -23,6 +23,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.MenuProvider;
+import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle;
@@ -44,7 +45,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import tun.utils.NetUtil;
 import tun.utils.ProgressTask;
@@ -242,18 +242,17 @@ public class SettingsActivity extends AppCompatActivity implements
                  @Override
                  public void onBindEditText(@NonNull EditText editText) {
                      editText.setSingleLine(true);
+                     editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
                  }
             });
             prefDnsPrimary.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
-                    if (preference instanceof EditTextPreference) {
-                        if (newValue instanceof String) {
-                            String ipAddress = (String) newValue;
-                            if (NetUtil.isValidIPv4Address(ipAddress) || NetUtil.isValidIPv6Address(ipAddress)) {
-                                app.storePrimaryDns((String) newValue);
-                                return true;
-                            }
+                    if (newValue instanceof String) {
+                        String ipAddress = (String) newValue;
+                        if (NetUtil.isValidIPv4Address(ipAddress) || NetUtil.isValidIPv6Address(ipAddress)) {
+                            app.storePrimaryDns(ipAddress);
+                            return true;
                         }
                     }
                     return false;
@@ -265,15 +264,16 @@ public class SettingsActivity extends AppCompatActivity implements
                 @Override
                 public void onBindEditText(@NonNull EditText editText) {
                     editText.setSingleLine(true);
+                    editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
                 }
             });
             prefDnsSecondary.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(@NonNull Preference preference, Object newValue) {
-                    if (preference instanceof EditTextPreference) {
+                    if (newValue instanceof String) {
                         String ipAddress = (String) newValue;
                         if (NetUtil.isValidIPv4Address(ipAddress) || NetUtil.isValidIPv6Address(ipAddress)) {
-                            app.storeSecondaryDns((String) newValue);
+                            app.storeSecondaryDns(ipAddress);
                             return true;
                         }
                     }
@@ -281,6 +281,22 @@ public class SettingsActivity extends AppCompatActivity implements
                 }
             });
             updateMenuItem();
+        }
+
+        @Override
+        public void onDisplayPreferenceDialog(@NonNull Preference preference) {
+            if (getParentFragmentManager().findFragmentByTag("androidx.preference.PreferenceFragment.DIALOG") != null) {
+                return;
+            }
+
+            if (preference instanceof EditTextPreference &&
+                    (DNS_PRIMARY.equals(preference.getKey()) || DNS_SECONDARY.equals(preference.getKey()))) {
+                DialogFragment f = DnsEditTextPreferenceDialogFragment.newInstance(preference.getKey());
+                f.setTargetFragment(this, 0);
+                f.show(getParentFragmentManager(), "androidx.preference.PreferenceFragment.DIALOG");
+            } else {
+                super.onDisplayPreferenceDialog(preference);
+            }
         }
 
         private void updateMenuItem() {
@@ -336,6 +352,44 @@ public class SettingsActivity extends AppCompatActivity implements
             return false;
         }
 
+    }
+
+    public static class DnsEditTextPreferenceDialogFragment extends EditTextPreferenceDialogFragmentCompat {
+        public static DnsEditTextPreferenceDialogFragment newInstance(String key) {
+            DnsEditTextPreferenceDialogFragment fragment = new DnsEditTextPreferenceDialogFragment();
+            Bundle b = new Bundle(1);
+            b.putString(ARG_KEY, key);
+            fragment.setArguments(b);
+            return fragment;
+        }
+
+        @Override
+        public void onStart() {
+            super.onStart();
+            final AlertDialog dialog = (AlertDialog) getDialog();
+            if (dialog != null) {
+                final Button okButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                okButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        EditText editText = dialog.findViewById(android.R.id.edit);
+                        if (editText != null) {
+                            String value = editText.getText().toString();
+                            if (NetUtil.isValidIPv4Address(value) || NetUtil.isValidIPv6Address(value)) {
+                                DnsEditTextPreferenceDialogFragment.this.onClick(dialog, DialogInterface.BUTTON_POSITIVE);
+                                dialog.dismiss();
+                            } else {
+                                editText.setError(getContext().getString(R.string.invalid_ip_address));
+                                Toast.makeText(getContext(), R.string.invalid_ip_address, Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            DnsEditTextPreferenceDialogFragment.this.onClick(dialog, DialogInterface.BUTTON_POSITIVE);
+                            dialog.dismiss();
+                        }
+                    }
+                });
+            }
+        }
     }
 
     public static class DisallowedPackageListFragment extends PackageListFragment {

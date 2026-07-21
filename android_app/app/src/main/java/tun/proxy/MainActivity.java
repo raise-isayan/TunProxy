@@ -38,7 +38,6 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import tun.proxy.service.Tun2HttpVpnService;
 import tun.utils.NetUtil;
@@ -48,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
 
     Button startButton;
     Button stopButton;
-    EditText hostEditText;
+    EditText hostPortEditText;
     Spinner proxyTypeSpinner;
     Spinner profileSpinner;
     private List<ProfileItem> profileList;
@@ -89,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
 
         startButton = findViewById(R.id.start);
         stopButton = findViewById(R.id.stop);
-        hostEditText = findViewById(R.id.host);
+        hostPortEditText = findViewById(R.id.host);
         proxyTypeSpinner = findViewById(R.id.proxy_type);
         profileSpinner = findViewById(R.id.spinner_profile);
 
@@ -129,13 +128,13 @@ public class MainActivity extends AppCompatActivity {
         profileSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                hostEditText.setError(null);
+                hostPortEditText.setError(null);
                 if (position == 0) { // "Manual"
-                    hostEditText.setText("");
+                    hostPortEditText.setText("");
                     proxyTypeSpinner.setSelection(MyApplication.ProxyType.HTTP.ordinal());
                 } else if (position > 0) { // Not "Manual"
                     ProfileItem profile = profileList.get(position);
-                    hostEditText.setText(HostPortPair.valueOf(profile.getHost(), profile.getPort()));
+                    hostPortEditText.setText(HostPortPair.valueOf(profile.getHost(), profile.getPort()));
                     proxyTypeSpinner.setSelection(profile.getType().ordinal());
                 }
             }
@@ -250,13 +249,13 @@ public class MainActivity extends AppCompatActivity {
         boolean running = isRunning();
         if (running) {
             startButton.setEnabled(false);
-            hostEditText.setEnabled(false);
+            hostPortEditText.setEnabled(false);
             proxyTypeSpinner.setEnabled(false);
             profileSpinner.setEnabled(false);
             stopButton.setEnabled(true);
         } else {
             startButton.setEnabled(true);
-            hostEditText.setEnabled(true);
+            hostPortEditText.setEnabled(true);
             proxyTypeSpinner.setEnabled(true);
             profileSpinner.setEnabled(true);
             stopButton.setEnabled(false);
@@ -330,14 +329,14 @@ public class MainActivity extends AppCompatActivity {
         if (!NetUtil.isValidHost(proxyHost) || !NetUtil.isValiPort(proxyPort)) {
             return;
         }
-        hostEditText.setText(HostPortPair.valueOf(proxyHost, proxyPort));
+        hostPortEditText.setText(HostPortPair.valueOf(proxyHost, proxyPort));
         proxyTypeSpinner.setSelection(proxyType.ordinal());
     }
 
     private boolean parseAndSaveHostPort() {
-        String proxyTarget = hostEditText.getText().toString();
+        String proxyTarget = hostPortEditText.getText().toString();
         if (!NetUtil.isValidHostPort(proxyTarget)) {
-            hostEditText.setError(getString(R.string.enter_host));
+            hostPortEditText.setError(getString(R.string.enter_host));
             return false;
         }
         try {
@@ -353,7 +352,7 @@ public class MainActivity extends AppCompatActivity {
             edit.putString(Tun2HttpVpnService.PREF_PROXY_TYPE, proxyType);
             edit.apply();
         } catch (NumberFormatException e) {
-            hostEditText.setError(getString(R.string.enter_host));
+            hostPortEditText.setError(getString(R.string.enter_host));
             return false;
         }
         return true;

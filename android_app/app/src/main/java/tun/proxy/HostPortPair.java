@@ -32,15 +32,18 @@ public class HostPortPair {
         this.port = port;
     }
 
-    public static HostPortPair parse(String hostPort) throws NumberFormatException {
+    public static HostPortPair parse(String hostPort) throws IllegalArgumentException {
         final HostPortPair pair = new HostPortPair();
         String[] parts = hostPort.split(":");
         int port = -1; // デフォルト値にはならないはず
-        if (parts.length > 1) {
+        if (parts.length == 2) {
             port = Integer.parseInt(parts[1]);
+            pair.host = parts[0];
+            pair.port = port;
         }
-        pair.host = parts[0];
-        pair.port = port;
+        else {
+            throw new IllegalArgumentException("Invalid host:port format:" + hostPort);
+        }
         return pair;
     }
 

@@ -179,7 +179,7 @@ public class ProfileSettingsActivity extends AppCompatActivity {
                 MyApplication.getInstance().storeProfiles(profileList);
                 adapter.notifyDataSetChanged();
                 dialog.dismiss();
-            } catch (NumberFormatException e) {
+            } catch (IllegalArgumentException e) {
                 textError.setText(R.string.profile_error_format);
                 textError.setVisibility(View.VISIBLE);
             }

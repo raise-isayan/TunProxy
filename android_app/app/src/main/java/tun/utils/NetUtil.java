@@ -194,7 +194,7 @@ public class NetUtil {
             if (!isValiPort(hostPortPair.getPort())) {
                 return false;
             }
-        } catch (NumberFormatException e) {
+        } catch (IllegalArgumentException e) {
             return false;
         }
         return true;

@@ -83,28 +83,34 @@ public class NetUtilTest {
         assertFalse(NetUtil.isValidIPv4Address("192.168.2.256"));
         assertFalse(NetUtil.isValidIPv4Address("192.168.256.11"));
         assertFalse(NetUtil.isValidIPv4Address("192.256.2.11"));
+        assertTrue(NetUtil.isValidIPv4Address("255.255.255.255"));
         assertFalse(NetUtil.isValidIPv4Address(null));
     }
 
     @Test
     public void testIsValidIPv6Address() {
-        assertEquals(false, NetUtil.isValidIPv6Address(""));
-        assertEquals(true, NetUtil.isValidIPv6Address("::"));
-        assertEquals(true, NetUtil.isValidIPv6Address("::1"));
-        assertEquals(true, NetUtil.isValidIPv6Address("2001:0db8:85a3:0000:0000:8a2e:0370:7334"));
-        assertEquals(true, NetUtil.isValidIPv6Address("2001:0db8:85a3:0:0000:8a2e:370:7334"));
-        assertEquals(true, NetUtil.isValidIPv6Address("2001:db8:85a3:0:0:8a2e:370:7334"));
-        assertEquals(true, NetUtil.isValidIPv6Address("2001:db8:85a3::8a2e:370:7334"));
-        assertEquals(true, NetUtil.isValidIPv6Address("2001:db8::1:0:0:1"));
-        assertEquals(true, NetUtil.isValidIPv6Address("2001:0db8:0000:0000:3456::"));
-        assertEquals(true, NetUtil.isValidIPv6Address("2001:0112:0000:0000:0000:0000:0000:0030"));
-        assertEquals(true, NetUtil.isValidIPv6Address("[2001:0112:0000:0000:0000:0000:0000:0030]"));
-        assertEquals(false, NetUtil.isValidIPv6Address("[2001:0112:0000:0000:0000:0000:0000:0030"));
-        assertEquals(false, NetUtil.isValidIPv6Address("2001:0112:0000:0000:0000:0000:0000:0030]"));
-        assertEquals(false, NetUtil.isValidIPv6Address("[[2001:0112:0000:0000:0000:0000:0000:0030]]"));
-        assertEquals(false, NetUtil.isValidIPv6Address("2001:0db8::3456::"));
-        assertEquals(false, NetUtil.isValidIPv6Address("2001:0112::0011::0030"));
-        assertEquals(false, NetUtil.isValidIPv6Address(null));
+        assertFalse(NetUtil.isValidIPv6Address(""));
+        assertFalse(NetUtil.isValidIPv6Address(":"));
+        assertFalse(NetUtil.isValidIPv6Address("[]"));
+        assertTrue(NetUtil.isValidIPv6Address("::"));
+        assertTrue(NetUtil.isValidIPv6Address("[::]"));
+        assertFalse(NetUtil.isValidIPv6Address(":::"));
+        assertTrue(NetUtil.isValidIPv6Address("::1"));
+        assertTrue(NetUtil.isValidIPv6Address("[::1]"));
+        assertTrue(NetUtil.isValidIPv6Address("2001:0db8:85a3:0000:0000:8a2e:0370:7334"));
+        assertTrue(NetUtil.isValidIPv6Address("2001:0db8:85a3:0:0000:8a2e:370:7334"));
+        assertTrue(NetUtil.isValidIPv6Address("2001:db8:85a3:0:0:8a2e:370:7334"));
+        assertTrue(NetUtil.isValidIPv6Address("2001:db8:85a3::8a2e:370:7334"));
+        assertTrue(NetUtil.isValidIPv6Address("2001:db8::1:0:0:1"));
+        assertTrue(NetUtil.isValidIPv6Address("2001:0db8:0000:0000:3456::"));
+        assertTrue(NetUtil.isValidIPv6Address("2001:0112:0000:0000:0000:0000:0000:0030"));
+        assertTrue(NetUtil.isValidIPv6Address("[2001:0112:0000:0000:0000:0000:0000:0030]"));
+        assertFalse(NetUtil.isValidIPv6Address("[2001:0112:0000:0000:0000:0000:0000:0030"));
+        assertFalse(NetUtil.isValidIPv6Address("2001:0112:0000:0000:0000:0000:0000:0030]"));
+        assertFalse(NetUtil.isValidIPv6Address("[[2001:0112:0000:0000:0000:0000:0000:0030]]"));
+        assertFalse(NetUtil.isValidIPv6Address("2001:0db8::3456::"));
+        assertFalse(NetUtil.isValidIPv6Address("2001:0112::0011::0030"));
+        assertFalse(NetUtil.isValidIPv6Address(null));
     }
 
 }
