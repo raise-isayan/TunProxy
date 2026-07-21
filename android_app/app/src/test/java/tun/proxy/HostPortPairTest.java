@@ -11,7 +11,7 @@ import java.util.EnumSet;
 public class HostPortPairTest {
     @Test
     public void testHostPortPair() {
-        HostPortPair pair = new HostPortPair("127.0.0.1",8080);
+        HostPortPair pair = new HostPortPair("127.0.0.1", 8080);
         assertEquals("127.0.0.1", pair.getHost());
         assertEquals(8080, pair.getPort());
     }
@@ -55,15 +55,15 @@ public class HostPortPairTest {
     @Test
     public void testValueOf() {
         {
-            String hostPort = HostPortPair.valueOf("127.0.0.1",8080);
+            String hostPort = HostPortPair.valueOf("127.0.0.1", 8080);
             assertEquals("127.0.0.1:8080", hostPort);
         }
         {
-            String hostPort = HostPortPair.valueOf("192.168.0.1",0);
+            String hostPort = HostPortPair.valueOf("192.168.0.1", 0);
             assertEquals("192.168.0.1:0", hostPort);
         }
         {
-            String hostPort = HostPortPair.valueOf("www.example.com",80);
+            String hostPort = HostPortPair.valueOf("www.example.com", 80);
             assertEquals("www.example.com:80", hostPort);
         }
 

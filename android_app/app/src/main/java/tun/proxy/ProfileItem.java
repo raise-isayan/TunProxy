@@ -9,7 +9,7 @@ import tun.proxy.service.Tun2HttpVpnService;
 
 public class ProfileItem implements Serializable {
     private String name;
-//    private String host;
+    //    private String host;
 //    private int port;
     private final HostPortPair hostPort;
     private MyApplication.ProxyType type;
@@ -77,7 +77,7 @@ public class ProfileItem implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        ProfileItem other =  (ProfileItem)obj;
+        ProfileItem other = (ProfileItem) obj;
         if (other == null)
             return false;
 

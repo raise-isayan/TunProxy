@@ -40,8 +40,7 @@ public class HostPortPair {
             port = Integer.parseInt(parts[1]);
             pair.host = parts[0];
             pair.port = port;
-        }
-        else {
+        } else {
             throw new IllegalArgumentException("Invalid host:port format:" + hostPort);
         }
         return pair;

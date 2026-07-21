@@ -239,11 +239,11 @@ public class SettingsActivity extends AppCompatActivity implements
             final EditTextPreference prefDnsPrimary = this.findPreference(DNS_PRIMARY);
             assert prefDnsPrimary != null;
             prefDnsPrimary.setOnBindEditTextListener(new EditTextPreference.OnBindEditTextListener() {
-                 @Override
-                 public void onBindEditText(@NonNull EditText editText) {
-                     editText.setSingleLine(true);
-                     editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-                 }
+                @Override
+                public void onBindEditText(@NonNull EditText editText) {
+                    editText.setSingleLine(true);
+                    editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
+                }
             });
             prefDnsPrimary.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
@@ -285,7 +285,8 @@ public class SettingsActivity extends AppCompatActivity implements
 
         @Override
         public void onDisplayPreferenceDialog(@NonNull Preference preference) {
-            if (getParentFragmentManager().findFragmentByTag("androidx.preference.PreferenceFragment.DIALOG") != null) {
+            if (getParentFragmentManager().findFragmentByTag("androidx.preference.PreferenceFragment.DIALOG") != null ||
+                    getChildFragmentManager().findFragmentByTag("androidx.preference.PreferenceFragment.DIALOG") != null) {
                 return;
             }
 
@@ -310,7 +311,7 @@ public class SettingsActivity extends AppCompatActivity implements
             int countDisallow = app.loadVPNApplication(MyApplication.VPNMode.DISALLOW).size();
             int countAllow = app.loadVPNApplication(MyApplication.VPNMode.ALLOW).size();
             prefDisallow.setTitle(getString(R.string.vpn_disallowed_application_list));
-            prefDisallow.setSummary(getString(R.string.vpn_disallowed_application_count) + String.format(Locale.ROOT," %d", countDisallow));
+            prefDisallow.setSummary(getString(R.string.vpn_disallowed_application_count) + String.format(Locale.ROOT, " %d", countDisallow));
             prefAllow.setTitle(getString(R.string.vpn_allowed_application_list));
             prefAllow.setSummary(getString(R.string.vpn_allowed_application_count) + String.format(Locale.ROOT, " %d", countAllow));
         }
@@ -330,8 +331,7 @@ public class SettingsActivity extends AppCompatActivity implements
                 case VPN_DISALLOWED_APPLICATION_LIST:
                 case VPN_ALLOWED_APPLICATION_LIST:
                     break;
-                case VPN_CLEAR_ALL_SELECTION:
-                {
+                case VPN_CLEAR_ALL_SELECTION: {
                     new AlertDialog.Builder(requireActivity())
                             .setTitle(getString(R.string.title_activity_settings))
                             .setMessage(getString(R.string.vpn_dialog_clear_all_application_msg))
@@ -819,8 +819,7 @@ public class SettingsActivity extends AppCompatActivity implements
                     }
                     if (MyApplication.AppOrderBy.ASC.equals(orderBy)) {
                         return t1.compareTo(t2);
-                    }
-                    else {
+                    } else {
                         return t2.compareTo(t1);
                     }
                 }

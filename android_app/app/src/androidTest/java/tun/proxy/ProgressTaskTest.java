@@ -39,15 +39,15 @@ public class ProgressTaskTest {
 
             @Override
             protected List<PackageInfo> doInBackground(String... var1) {
-            for (int i = 0; i < 100; i++) {
-                try {
-                    Thread.sleep(10);
-                    Log.d(TAG, "Progress:" + i);
-                } catch (InterruptedException e) {
-                    Log.e(TAG, e.getMessage(), e);
+                for (int i = 0; i < 100; i++) {
+                    try {
+                        Thread.sleep(10);
+                        Log.d(TAG, "Progress:" + i);
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, e.getMessage(), e);
+                    }
                 }
-            }
-            return null;
+                return null;
             }
 
         };
