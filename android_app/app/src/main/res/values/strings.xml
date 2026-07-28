@@ -62,6 +62,8 @@
     <string name="dns_use_custom_summary">Enable to specify custom DNS servers</string>
     <string name="dns_primary">Primary DNS</string>
     <string name="dns_secondary">Secondary DNS</string>
+    <string name="dns_google_primary">8.8.8.8</string>
+    <string name="dns_google_secondary">8.8.4.4</string>
     <string name="profile_name">Profile Name</string>
     <string name="profile_host_port">Host:Port</string>
 

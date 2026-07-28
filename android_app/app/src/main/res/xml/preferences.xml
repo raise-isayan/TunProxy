@@ -52,13 +52,13 @@
             android:key="dns_primary"
             android:title="@string/dns_primary"
             android:dependency="dns_use_custom"
-            android:defaultValue="8.8.8.8"
+            android:defaultValue="@string/dns_google_primary"
             app:useSimpleSummaryProvider="true" />
         <EditTextPreference
             android:key="dns_secondary"
             android:title="@string/dns_secondary"
             android:dependency="dns_use_custom"
-            android:defaultValue="8.8.4.4"
+            android:defaultValue="@string/dns_google_secondary"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 </PreferenceScreen>

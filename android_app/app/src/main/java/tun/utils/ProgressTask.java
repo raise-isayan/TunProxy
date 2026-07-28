@@ -7,9 +7,7 @@ import android.util.Log;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import tun.proxy.R;
-
-public abstract class ProgressTask<Params, Progress, Result> {
+public abstract class ProgressTask<Params, Result> {
     private static final String TAG = "ProgressTask";
 
     private volatile Status mStatus = Status.PENDING;

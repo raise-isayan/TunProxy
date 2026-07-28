@@ -235,13 +235,15 @@ public class NetUtil {
             byte prefix = 32;
             while (prefix > 0) {
                 long mask = prefix2mask(prefix - 1);
-                if ((from & mask) != from)
+                if ((from & mask) != from) {
                     break;
+                }
                 prefix--;
             }
             byte max = (byte) (32 - Math.floor(Math.log(to - from + 1) / Math.log(2)));
-            if (prefix < max)
+            if (prefix < max) {
                 prefix = max;
+            }
 
             listResult.add(new CIDR(long2inet(from), prefix));
 
@@ -249,8 +251,9 @@ public class NetUtil {
             from += p.longValue();
 //            from += (long) Math.pow(2, (32 - prefix));
         }
-        for (CIDR cidr : listResult)
+        for (CIDR cidr : listResult) {
             Log.i(TAG, cidr.toString());
+        }
 
         return listResult;
     }
@@ -261,9 +264,11 @@ public class NetUtil {
 
     private static long inet2long(InetAddress addr) {
         long result = 0;
-        if (addr != null)
-            for (byte b : addr.getAddress())
+        if (addr != null) {
+            for (byte b : addr.getAddress()) {
                 result = result << 8 | (b & 0xFF);
+            }
+        }
         return result;
     }
 
@@ -354,7 +359,5 @@ public class NetUtil {
             Long lother = NetUtil.inet2long(other.address);
             return lcidr.compareTo(lother);
         }
-
-
     }
 }

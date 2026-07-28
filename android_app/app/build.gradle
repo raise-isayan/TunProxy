@@ -10,7 +10,7 @@ android {
         applicationId "tun.proxy"
         minSdk 23
         targetSdk 37
-        versionCode 100510
+        versionCode 100520
         versionName VERSION_NAME
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
@@ -86,5 +86,5 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
-    testImplementation 'org.json:json:20260522'
+    testImplementation 'org.json:json:20260719'
 }

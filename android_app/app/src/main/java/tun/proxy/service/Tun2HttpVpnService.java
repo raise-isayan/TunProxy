@@ -152,8 +152,8 @@ public class Tun2HttpVpnService extends VpnService {
         MyApplication app = (MyApplication) this.getApplication();
         assert app != null;
         if (app.loadUseDnsCustom()) {
-            String dns1 = app.loadPrimaryDns("8.8.8.8");
-            String dns2 = app.loadSecondaryDns("8.8.4.4");
+            String dns1 = app.loadPrimaryDns(getString((R.string.dns_google_primary)));
+            String dns2 = app.loadSecondaryDns(getString((R.string.dns_google_secondary)));
             if (!TextUtils.isEmpty(dns1)) {
                 Log.i(TAG, "custom primary DNS:" + dns1);
                 builder.addDnsServer(dns1);

@@ -767,7 +767,7 @@ public class SettingsActivity extends AppCompatActivity implements
      * https://developer.android.com/reference/android/os/AsyncTask
      * Deprecated in API level R
      * */
-    public static class AsyncTaskProgress extends ProgressTask<String, String, List<PackageInfo>> {
+    public static class AsyncTaskProgress extends ProgressTask<String, List<PackageInfo>> {
 
         final PackageListFragment packageFragment;
 

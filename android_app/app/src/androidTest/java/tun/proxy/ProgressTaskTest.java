@@ -35,7 +35,7 @@ public class ProgressTaskTest {
     public void progressTask() {
         Log.w(TAG, "progressTask: start");
 
-        ProgressTask<String, String, List<PackageInfo>> task = new ProgressTask<>() {
+        ProgressTask<String, List<PackageInfo>> task = new ProgressTask<>() {
 
             @Override
             protected List<PackageInfo> doInBackground(String... var1) {
