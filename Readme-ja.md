@@ -129,21 +129,21 @@ DNSサーバの設定を行います。
 
 ### Profile New
 
-プロファイルを新規作成します。
+(![New Button](images/profile_add.png)) からプロファイルを新規作成します。
 
 ![Profile New](images/Menu-Profile-New.png)
 
 ### Profile Edit
 
-プロファイルを編集します。
+(![Edit Button](images/profile_edit.png)) からプロファイルを編集します。
 
-![Profile New](images/Menu-Profile-Edit.png)
+![Profile Edit](images/Menu-Profile-Edit.png)
 
 ### Profile Delete
 
-プロファイルを削除します。
+(![Del Button](images/profile_del.png)) からプロファイルを削除します。
 
-![Profile New](images/Menu-Profile-Delete.png)
+![Profile Delete](images/Menu-Profile-Delete.png)
 
 ## About
 

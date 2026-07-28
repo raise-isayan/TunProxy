@@ -121,21 +121,21 @@ List view of profiles.
 
 ### Profile New
 
-Create a new profile.
+Create a new profile from (![New Button](images/profile_add.png))
 
 ![Profile New](images/Menu-Profile-New.png)
 
 ### Profile Edit
 
-Edit Profile
+Edit Profile from (![Edit Button](images/profile_edit.png))
 
-![Profile New](images/Menu-Profile-Edit.png)
+![Profile Edit](images/Menu-Profile-Edit.png)
 
 ### Profile Delete
 
-Delete Profile
+Delete Profile from (![Del Button](images/profile_del.png))
 
-![Profile New](images/Menu-Profile-Delete.png)
+![Profile Delete](images/Menu-Profile-Delete.png)
 
 ## About
 
