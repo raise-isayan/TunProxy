@@ -117,25 +117,25 @@ Configure the DNS server settings.
 
 List view of profiles.
 
-![Profile New](images/Menu-Profile-List.png)
+![New Profile](images/Menu-Profile-List.png)
 
-### Profile New
+### New Profile
 
 Create a new profile from (![New Button](images/profile_add.png))
 
-![Profile New](images/Menu-Profile-New.png)
+![New Profile](images/Menu-Profile-New.png)
 
-### Profile Edit
+### Edit Profile
 
 Edit Profile from (![Edit Button](images/profile_edit.png))
 
-![Profile Edit](images/Menu-Profile-Edit.png)
+![Edit Profile](images/Menu-Profile-Edit.png)
 
-### Profile Delete
+### Delete Profile
 
 Delete Profile from (![Del Button](images/profile_del.png))
 
-![Profile Delete](images/Menu-Profile-Delete.png)
+![Delete Profile](images/Menu-Profile-Delete.png)
 
 ## About
 
@@ -172,6 +172,7 @@ Please refer to the following web site as a solution
 * Android 6.0 (API Level 23) or later
 
 ### Build
+
  gradlew build
 
 ## Base application

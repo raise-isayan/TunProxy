@@ -1,6 +1,7 @@
 package tun.proxy;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -50,6 +51,14 @@ public class HostPortPairTest {
         } catch (IllegalArgumentException ex) {
             assertTrue(true);
         }
+    }
+
+    @Test
+    public void testEq()  {
+        String hostPort1 = HostPortPair.valueOf("127.0.0.1", 8080);
+        String hostPort2 = HostPortPair.valueOf("127.0.0.1", 8080);
+        assertFalse(hostPort1.equals(null));
+        assertTrue(hostPort1.equals(hostPort2));
     }
 
     @Test

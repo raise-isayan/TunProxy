@@ -38,16 +38,25 @@ public class ProfileItemTest {
     @Test
     public void testSettersAndGetters() {
         ProfileItem item = new ProfileItem("Name", "Host", 1, MyApplication.ProxyType.HTTP);
-        item.setName("New Name");
-        item.setHost("New Host");
+        item.setName("Edit Name");
+        item.setHost("Edit Host");
         item.setPort(2);
         item.setType(MyApplication.ProxyType.SOCKS5);
 
-        assertEquals("New Name", item.getName());
-        assertEquals("New Host", item.getHost());
+        assertEquals("Edit Name", item.getName());
+        assertEquals("Edit Host", item.getHost());
         assertEquals(2, item.getPort());
         assertEquals(MyApplication.ProxyType.SOCKS5, item.getType());
     }
+
+    @Test
+    public void testEq()  {
+        ProfileItem item1 = new ProfileItem("Test Profile", "127.0.0.1", 8080, MyApplication.ProxyType.HTTP);
+        ProfileItem item2 = new ProfileItem("Test Profile", "127.0.0.1", 8080, MyApplication.ProxyType.HTTP);
+        assertFalse(item1.equals(null));
+        assertTrue(item1.equals(item2));
+    }
+
 
     @Test
     public void testToString() {

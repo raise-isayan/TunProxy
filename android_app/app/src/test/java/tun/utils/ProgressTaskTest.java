@@ -1,4 +1,4 @@
-package tun.proxy;
+package tun.utils;
 
 import android.content.pm.PackageInfo;
 import android.util.Log;
@@ -13,11 +13,6 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
-import tun.utils.ProgressTask;
-
-import static org.junit.Assert.assertEquals;
-
-@RunWith(AndroidJUnit4.class)
 public class ProgressTaskTest {
     private static final String TAG = "ProgressTaskTest";
 
@@ -39,15 +34,15 @@ public class ProgressTaskTest {
 
             @Override
             protected List<PackageInfo> doInBackground(String... var1) {
-                for (int i = 0; i < 100; i++) {
-                    try {
-                        Thread.sleep(10);
-                        Log.d(TAG, "Progress:" + i);
-                    } catch (InterruptedException e) {
-                        Log.e(TAG, e.getMessage(), e);
-                    }
+            for (int i = 0; i < 100; i++) {
+                try {
+                    Thread.sleep(10);
+                    Log.d(TAG, "Progress:" + i);
+                } catch (InterruptedException e) {
+                    Log.e(TAG, e.getMessage(), e);
                 }
-                return null;
+            }
+            return null;
             }
 
         };

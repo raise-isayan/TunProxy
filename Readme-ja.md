@@ -125,25 +125,25 @@ DNSサーバの設定を行います。
 
 プロファイルの一覧が表示されます。
 
-![Profile New](images/Menu-Profile-List.png)
+![New Profile](images/Menu-Profile-List.png)
 
-### Profile New
+### New Profile
 
 (![New Button](images/profile_add.png)) からプロファイルを新規作成します。
 
-![Profile New](images/Menu-Profile-New.png)
+![New Profile](images/Menu-Profile-New.png)
 
-### Profile Edit
+### Edit Profile
 
 (![Edit Button](images/profile_edit.png)) からプロファイルを編集します。
 
 ![Profile Edit](images/Menu-Profile-Edit.png)
 
-### Profile Delete
+### Delete Profile
 
 (![Del Button](images/profile_del.png)) からプロファイルを削除します。
 
-![Profile Delete](images/Menu-Profile-Delete.png)
+![Delete Profile](images/Menu-Profile-Delete.png)
 
 ## About
 
@@ -182,6 +182,7 @@ SSLを復号化するには、ローカルプロキシツールのRoot証明書�
 * Android 6.0 (API Level 23) 以降
 
 ### ビルド
+
  gradlew build
 
 ## 謝辞

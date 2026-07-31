@@ -416,32 +416,43 @@ public class Tun2HttpVpnService extends VpnService {
         public boolean equals(Object obj) {
             Builder other = (Builder) obj;
 
-            if (other == null)
+            if (other == null) {
                 return false;
+            }
 
-            if (this.mtu != other.mtu)
+            if (this.mtu != other.mtu) {
                 return false;
+            }
 
-            if (this.listAddress.size() != other.listAddress.size())
+            if (this.listAddress.size() != other.listAddress.size()) {
                 return false;
+            }
 
-            if (this.listRoute.size() != other.listRoute.size())
+            if (this.listRoute.size() != other.listRoute.size()) {
                 return false;
+            }
 
-            if (this.listDns.size() != other.listDns.size())
+            if (this.listDns.size() != other.listDns.size()) {
                 return false;
+            }
 
-            for (String address : this.listAddress)
-                if (!other.listAddress.contains(address))
+            for (String address : this.listAddress) {
+                if (!other.listAddress.contains(address)) {
                     return false;
+                }
+            }
 
-            for (String route : this.listRoute)
-                if (!other.listRoute.contains(route))
+            for (String route : this.listRoute) {
+                if (!other.listRoute.contains(route)) {
                     return false;
+                }
+            }
 
-            for (String dns : this.listDns)
-                if (!other.listDns.contains(dns))
+            for (String dns : this.listDns) {
+                if (!other.listDns.contains(dns)) {
                     return false;
+                }
+            }
 
             return true;
         }

@@ -53,14 +53,17 @@ public class HostPortPair {
     @Override
     public boolean equals(Object obj) {
         HostPortPair other = (HostPortPair) obj;
-        if (other == null)
+        if (other == null) {
             return false;
+        }
 
-        if (!this.host.equals(other.host))
+        if (!this.host.equals(other.host)) {
             return false;
+        }
 
-        if (this.port != other.port)
+        if (this.port != other.port) {
             return false;
+        }
 
         return true;
     }
