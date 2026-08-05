@@ -293,6 +293,11 @@ public class SettingsActivity extends AppCompatActivity implements
             if (preference instanceof EditTextPreference &&
                     (DNS_PRIMARY.equals(preference.getKey()) || DNS_SECONDARY.equals(preference.getKey()))) {
                 DialogFragment f = DnsEditTextPreferenceDialogFragment.newInstance(preference.getKey());
+                /*
+                 * Fragment.setTargetFragment is deprecated as of Fragment 1.3.0, but
+                 * PreferenceDialogFragmentCompat (and its subclasses) still internally requires it
+                 * as of androidx.preference:preference:1.2.1.
+                 */
                 f.setTargetFragment(this, 0);
                 f.show(getParentFragmentManager(), "androidx.preference.PreferenceFragment.DIALOG");
             } else {

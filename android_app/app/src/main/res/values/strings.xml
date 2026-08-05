@@ -36,6 +36,7 @@
     <string name="vpn_allowed_application_count">selected application count: </string>
     <string name="vpn_disallowed_application_list">Disallowed application list</string>
     <string name="vpn_disallowed_application_count">selected application count: </string>
+    <string name="vpn_clear_all_selection">Clear all selection</string>
     <string name="vpn_dialog_clear_all_application_msg">Clear all selections of Allowed / Disallowed application list</string>
 
     <string-array name="pref_vpn_connection_name">

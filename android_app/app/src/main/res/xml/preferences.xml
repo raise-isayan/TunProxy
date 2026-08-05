@@ -27,7 +27,7 @@
             android:layout_height="wrap_content" />
         <PreferenceScreen
             android:key="vpn_dialog_clear_all_selection"
-            android:title="Clear all selection" />
+            android:title="@string/vpn_clear_all_selection" />
     </PreferenceCategory>
 
     <PreferenceCategory
