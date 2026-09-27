@@ -301,10 +301,10 @@ void *handle_events(void *a) {
         log_android(ANDROID_LOG_ERROR, "DetachCurrentThread failed");
     }
 
+    log_android(ANDROID_LOG_WARN, "Stopped events tun=%d thread %x", args->tun, thread_id);
+
     // Cleanup
     free(args);
-
-    log_android(ANDROID_LOG_WARN, "Stopped events tun=%d thread %x", args->tun, thread_id);
     thread_id = 0;
     return NULL;
 }

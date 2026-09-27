@@ -72,5 +72,6 @@ public class MyApplicationTest {
     public void testProxyType() {
         assertEquals(0, MyApplication.ProxyType.HTTP.ordinal());
         assertEquals(1, MyApplication.ProxyType.SOCKS5.ordinal());
+        assertEquals(2, MyApplication.ProxyType.SOCKS4.ordinal());
     }
 }

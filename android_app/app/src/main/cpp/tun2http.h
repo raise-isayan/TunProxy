@@ -59,6 +59,11 @@
 #define SOCKS5_STATE_GREETING 2
 #define SOCKS5_STATE_CONNECT  3
 
+// Must match MyApplication.ProxyType ordinal
+#define PROXY_TYPE_HTTP   0
+#define PROXY_TYPE_SOCKS5 1
+#define PROXY_TYPE_SOCKS4 2
+
 #define MTU 10000
 
 struct arguments {
@@ -69,7 +74,7 @@ struct arguments {
     jint rcode;
     char proxyIp[128];
     int proxyPort;
-    jboolean isSocks5;
+    jint proxyType;
 };
 
 struct allowed {

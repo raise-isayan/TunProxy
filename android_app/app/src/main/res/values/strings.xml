@@ -55,6 +55,7 @@
     <string-array name="proxy_types">
         <item>HTTP</item>
         <item>SOCKS5</item>
+        <item>SOCKS4</item>
     </string-array>
 
     <!-- DNS Setting -->

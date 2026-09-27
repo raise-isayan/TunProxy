@@ -79,7 +79,7 @@ Java_tun_proxy_service_Tun2HttpVpnService_jni_1init(JNIEnv *env, jobject instanc
 JNIEXPORT void JNICALL
 Java_tun_proxy_service_Tun2HttpVpnService_jni_1start(
         JNIEnv *env, jobject instance, jint tun, jboolean fwd53, jint rcode, jstring proxyIp,
-        jint proxyPort, jboolean isSocks5) {
+        jint proxyPort, jint proxyType) {
 
     const char *proxy_ip = (*env)->GetStringUTFChars(env, proxyIp, 0);
 
@@ -109,7 +109,7 @@ Java_tun_proxy_service_Tun2HttpVpnService_jni_1start(
         args->rcode = rcode;
         strcpy(args->proxyIp, proxy_ip);
         args->proxyPort = proxyPort;
-        args->isSocks5 = isSocks5;
+        args->proxyType = proxyType;
 
 
         // Start native thread

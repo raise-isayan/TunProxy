@@ -25,6 +25,101 @@ static int is_http_payload(const uint8_t *data, size_t len) {
     return 0;
 }
 
+// Returns 4 or 6 when host is an IP literal (addr filled in), otherwise 0
+static int parse_ip_literal(const char *host, uint8_t *addr) {
+    if (inet_pton(AF_INET, host, addr) == 1) return 4;
+    if (inet_pton(AF_INET6, host, addr) == 1) return 6;
+    return 0;
+}
+
+// SOCKS4 / SOCKS4a CONNECT request, returns the length or -1 (IPv6 is not supported)
+static int build_socks4_request(const struct tcp_session *t, uint8_t *buf, size_t size) {
+    uint8_t addr[16];
+    int type = parse_ip_literal(t->hostname, addr);
+    size_t hostlen = strlen(t->hostname);
+    if (type == 6 || (type == 0 && hostlen == 0) || 9 + hostlen + 1 > size) return -1;
+
+    int len = 0;
+    buf[len++] = 0x04; // VN
+    buf[len++] = 0x01; // CD: CONNECT
+    memcpy(buf + len, &t->dest, 2); // DSTPORT
+    len += 2;
+    if (type == 4) {
+        memcpy(buf + len, addr, 4); // DSTIP
+        len += 4;
+        buf[len++] = 0x00; // USERID (empty)
+    } else {
+        // SOCKS4a: DSTIP 0.0.0.x (x != 0), hostname follows USERID
+        buf[len++] = 0x00;
+        buf[len++] = 0x00;
+        buf[len++] = 0x00;
+        buf[len++] = 0x01;
+        buf[len++] = 0x00; // USERID (empty)
+        memcpy(buf + len, t->hostname, hostlen + 1);
+        len += (int) hostlen + 1;
+    }
+    return len;
+}
+
+// SOCKS5 CONNECT request, returns the length or -1
+static int build_socks5_request(const struct tcp_session *t, uint8_t *buf, size_t size) {
+    uint8_t addr[16];
+    int type = parse_ip_literal(t->hostname, addr);
+    size_t hostlen = strlen(t->hostname);
+    if ((type == 0 && (hostlen == 0 || hostlen > 255)) || 7 + 16 + hostlen > size) return -1;
+
+    int len = 0;
+    buf[len++] = 0x05; // VER
+    buf[len++] = 0x01; // CMD: CONNECT
+    buf[len++] = 0x00; // RSV
+    if (type == 4) {
+        buf[len++] = 0x01; // ATYP: IPv4
+        memcpy(buf + len, addr, 4);
+        len += 4;
+    } else if (type == 6) {
+        buf[len++] = 0x04; // ATYP: IPv6
+        memcpy(buf + len, addr, 16);
+        len += 16;
+    } else {
+        buf[len++] = 0x03; // ATYP: DOMAINNAME
+        buf[len++] = (uint8_t) hostlen;
+        memcpy(buf + len, t->hostname, hostlen);
+        len += (int) hostlen;
+    }
+    memcpy(buf + len, &t->dest, 2); // DST.PORT
+    len += 2;
+    return len;
+}
+
+// Proxy reply parsers: length of a complete successful reply, 0 if incomplete, -1 on failure
+static int parse_socks4_reply(const uint8_t *buf, size_t len) {
+    // VN(0x00) CD(0x5A = granted) DSTPORT(2) DSTIP(4)
+    if (len >= 1 && buf[0] != 0x00) return -1;
+    if (len >= 2 && buf[1] != 0x5A) return -1;
+    return len >= 8 ? 8 : 0;
+}
+
+static int parse_socks5_reply(const uint8_t *buf, size_t len) {
+    // VER REP RSV ATYP BND.ADDR BND.PORT
+    if (len >= 1 && buf[0] != 0x05) return -1;
+    if (len >= 2 && buf[1] != 0x00) return -1;
+    if (len < 5) return 0;
+    size_t need;
+    switch (buf[3]) {
+        case 0x01: need = 4 + 4 + 2; break;
+        case 0x04: need = 4 + 16 + 2; break;
+        case 0x03: need = 4 + 1 + buf[4] + 2; break;
+        default: return -1;
+    }
+    return len >= need ? (int) need : 0;
+}
+
+// Remove an already peeked proxy reply from the socket
+static int consume_reply(int sock, int len) {
+    uint8_t tmp[512];
+    return recv(sock, tmp, (size_t) len, 0) == len;
+}
+
 void clear_tcp_data(struct tcp_session *cur) {
     struct segment *s = cur->forward;
     while (s != NULL) {
@@ -118,9 +213,8 @@ int monitor_tcp_session(const struct arguments *args, struct ng_session *s, int 
 
     if (s->tcp.state == TCP_LISTEN) {
 
-        int rport = htons(s->tcp.dest);
-        // Check for connected = writable
-        if (s->tcp.connect_sent == TCP_CONNECT_SENT && rport != 80) {
+        // Wait for the proxy reply, otherwise check for connected = writable
+        if (s->tcp.connect_sent == TCP_CONNECT_SENT) {
             events = events | EPOLLIN;
         } else {
             events = events | EPOLLOUT;
@@ -301,34 +395,38 @@ void check_tcp_socket(const struct arguments *args,
             // Check socket connect
             if (ev->events & EPOLLIN) {
                 uint8_t buffer[512];
-                ssize_t bytes = recv(s->socket, buffer, sizeof(buffer), 0);
+                // SOCKS: peek only, so that data sent by the server right after
+                // the proxy reply is not consumed together with the reply
+                int peek = (args->proxyType != PROXY_TYPE_HTTP);
+                ssize_t bytes = recv(s->socket, buffer, sizeof(buffer) - 1, peek ? MSG_PEEK : 0);
                 if (bytes <= 0) {
                     log_android(ANDROID_LOG_ERROR, "%s recv error %d: %s",
                                 session, errno, strerror(errno));
                     write_rst(args, &s->tcp);
-                } else if (args->isSocks5) {
+                } else if (args->proxyType == PROXY_TYPE_SOCKS4) {
+                    int rlen = parse_socks4_reply(buffer, (size_t) bytes);
+                    if (rlen > 0 && consume_reply(s->socket, rlen)) {
+                        s->tcp.connect_sent = TCP_CONNECT_ESTABLISHED;
+                        s->tcp.state = TCP_SYN_RECV;
+                    } else if (rlen != 0) {
+                        log_android(ANDROID_LOG_ERROR, "%s SOCKS4 connect failed %d",
+                                    session, bytes >= 2 ? buffer[1] : -1);
+                        write_rst(args, &s->tcp);
+                    }
+                } else if (args->proxyType == PROXY_TYPE_SOCKS5) {
                     if (s->tcp.socks5_state == SOCKS5_STATE_GREETING) {
-                        if (bytes >= 2 && buffer[0] == 0x05 && buffer[1] == 0x00) {
-                            uint8_t request[1024];
-                            int reqlen = 0;
-                            request[reqlen++] = 0x05; // VER
-                            request[reqlen++] = 0x01; // CMD
-                            request[reqlen++] = 0x00; // RSV
-                            if (s->tcp.hostname[0] != 0) {
-                                request[reqlen++] = 0x03; // ATYP: DOMAINNAME
-                                uint8_t hostlen = (uint8_t) strlen(s->tcp.hostname);
-                                request[reqlen++] = hostlen;
-                                memcpy(request + reqlen, s->tcp.hostname, hostlen);
-                                reqlen += hostlen;
-                            } else {
-                                request[reqlen++] = 0x01; // ATYP: IPv4
-                                memcpy(request + reqlen, &s->tcp.daddr.ip4, 4);
-                                reqlen += 4;
-                            }
-                            memcpy(request + reqlen, &s->tcp.dest, 2);
-                            reqlen += 2;
-
-                            if (send(s->socket, request, (size_t) reqlen, MSG_NOSIGNAL) != reqlen) {
+                        if (bytes < 2) {
+                            // Wait for the complete reply
+                        } else if (buffer[0] == 0x05 && buffer[1] == 0x00 &&
+                                   consume_reply(s->socket, 2)) {
+                            uint8_t request[300];
+                            int reqlen = build_socks5_request(&s->tcp, request, sizeof(request));
+                            if (reqlen < 0) {
+                                log_android(ANDROID_LOG_ERROR,
+                                            "%s SOCKS5 invalid destination", session);
+                                write_rst(args, &s->tcp);
+                            } else if (send(s->socket, request, (size_t) reqlen, MSG_NOSIGNAL) !=
+                                       reqlen) {
                                 log_android(ANDROID_LOG_ERROR,
                                             "%s SOCKS5 connect send error %d: %s",
                                             session, errno, strerror(errno));
@@ -341,11 +439,13 @@ void check_tcp_socket(const struct arguments *args,
                             write_rst(args, &s->tcp);
                         }
                     } else if (s->tcp.socks5_state == SOCKS5_STATE_CONNECT) {
-                        if (bytes >= 10 && buffer[0] == 0x05 && buffer[1] == 0x00) {
+                        int rlen = parse_socks5_reply(buffer, (size_t) bytes);
+                        if (rlen > 0 && consume_reply(s->socket, rlen)) {
                             s->tcp.connect_sent = TCP_CONNECT_ESTABLISHED;
                             s->tcp.state = TCP_SYN_RECV;
-                        } else {
-                            log_android(ANDROID_LOG_ERROR, "%s SOCKS5 connect failed", session);
+                        } else if (rlen != 0) {
+                            log_android(ANDROID_LOG_ERROR, "%s SOCKS5 connect failed %d",
+                                        session, bytes >= 2 ? buffer[1] : -1);
                             write_rst(args, &s->tcp);
                         }
                     }
@@ -392,7 +492,7 @@ void check_tcp_socket(const struct arguments *args,
                     size_t len = s->tcp.forward->len - s->tcp.forward->sent;
                     size_t newlen = len;
                     uint8_t *new_data = 0;
-                    if (!args->isSocks5 && s->tcp.is_http) {
+                    if (args->proxyType == PROXY_TYPE_HTTP && s->tcp.is_http) {
                         new_data = patch_http_url(data, &newlen);
                         if (new_data) {
                             data = new_data;
@@ -717,6 +817,8 @@ jboolean handle_tcp(const struct arguments *args,
             s->tcp.connect_sent = TCP_CONNECT_NOT_SENT;
             s->tcp.is_http = 0;
             s->tcp.is_tls = 0;
+            s->tcp.hostname[0] = 0;
+            s->tcp.socks5_state = 0;
 
             if (version == 4) {
                 s->tcp.saddr.ip4 = (__be32) ip4->saddr;
@@ -803,11 +905,15 @@ jboolean handle_tcp(const struct arguments *args,
             if (len > 0) {
                 strcpy(cur->tcp.hostname, hostname);
             } else if (cur->tcp.hostname[0] == 0) {
-                struct sockaddr_in addr4;
-                addr4.sin_family = AF_INET;
-                addr4.sin_addr.s_addr = (__be32) cur->tcp.daddr.ip4;
-                addr4.sin_port = cur->tcp.dest;
-                lookup_hostname(&addr4, hostname, 512, 1);
+                if (cur->tcp.version == 4) {
+                    struct sockaddr_in addr4;
+                    addr4.sin_family = AF_INET;
+                    addr4.sin_addr.s_addr = (__be32) cur->tcp.daddr.ip4;
+                    addr4.sin_port = cur->tcp.dest;
+                    lookup_hostname(&addr4, hostname, 512, 1);
+                } else {
+                    inet_ntop(AF_INET6, &cur->tcp.daddr.ip6, hostname, sizeof(hostname));
+                }
                 len = strlen(hostname);
                 if (len > 0) {
                     strcpy(cur->tcp.hostname, hostname);
@@ -815,7 +921,22 @@ jboolean handle_tcp(const struct arguments *args,
             }
 
             if (cur->tcp.connect_sent == TCP_CONNECT_NOT_SENT && datalen > 0) {
-                if (args->isSocks5) {
+                if (args->proxyType == PROXY_TYPE_SOCKS4) {
+                    uint8_t request[300];
+                    int reqlen = build_socks4_request(&cur->tcp, request, sizeof(request));
+                    if (reqlen < 0) {
+                        log_android(ANDROID_LOG_ERROR, "%s SOCKS4 unsupported destination %s",
+                                    packet, cur->tcp.hostname);
+                        write_rst(args, &cur->tcp);
+                    } else if (send(cur->socket, request, (size_t) reqlen, MSG_NOSIGNAL) != reqlen) {
+                        log_android(ANDROID_LOG_ERROR, "%s SOCKS4 connect send error %d: %s",
+                                    packet, errno, strerror(errno));
+                        write_rst(args, &cur->tcp);
+                    } else {
+                        cur->tcp.connect_sent = TCP_CONNECT_SENT;
+                        cur->tcp.state = TCP_LISTEN;
+                    }
+                } else if (args->proxyType == PROXY_TYPE_SOCKS5) {
                     uint8_t greeting[] = {0x05, 0x01, 0x00};
                     ssize_t sent = send(cur->socket, greeting, sizeof(greeting), MSG_NOSIGNAL);
                     if (sent < 0) {
@@ -829,8 +950,11 @@ jboolean handle_tcp(const struct arguments *args,
                     }
                 } else if (is_tls || rport == 443 || (!is_http && rport != 80)) {
                     if (cur->tcp.hostname[0] != 0) {
-                        char buffer[512];
-                        sprintf(buffer, "CONNECT %s:%d HTTP/1.0\r\n\r\n", cur->tcp.hostname, rport);
+                        char buffer[600];
+                        // IPv6 literal must be enclosed in brackets
+                        int ipv6 = (strchr(cur->tcp.hostname, ':') != NULL);
+                        snprintf(buffer, sizeof(buffer), "CONNECT %s%s%s:%d HTTP/1.0\r\n\r\n",
+                                 ipv6 ? "[" : "", cur->tcp.hostname, ipv6 ? "]" : "", rport);
 
                         ssize_t sent = send(cur->socket, buffer, strlen(buffer), MSG_NOSIGNAL);
                         if (sent < 0) {

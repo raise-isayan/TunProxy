@@ -93,7 +93,7 @@ public class MyApplication extends Application {
 
     public enum AppOrderBy {ASC, DESC}
 
-    public enum ProxyType {HTTP, SOCKS5}
+    public enum ProxyType {HTTP, SOCKS5, SOCKS4}
 
     /*
      * Proxy setting
