@@ -1,4 +1,4 @@
-Android HTTP traffic Proxy setting tool
+Android traffic Proxy setting tool
 =============
 
 Language/[Japanese](https://github.com/raise-isayan/TunProxy/blob/master/Readme-ja.md)
@@ -7,6 +7,8 @@ This tool is a proxy configuration tool that takes advantage of Android VPNServi
 Only the communication from the specified application can be acquired.
 
 ## How to use
+
+If the Root CA you want to trust is not in the user certificate store, install it.
 
 When you start the TunProxy application, the following screen will be launched.
 
@@ -18,8 +20,16 @@ When you start the TunProxy application, the following screen will be launched.
     * Configure it manually.
 
 * Proxy address (host:port)
-  * Specify the destination proxy server in the format ** host:port r**.
+  * Specify the destination proxy server in the format ** host:port **.
     When you specify an IP address, use the IPv4 format.
+
+* Proxy Type
+  * HTTP
+     Connect as an HTTP proxy.
+  * SOCKS5
+     Connect as a SOCKS5 proxy.
+  * SOCKS4
+     Connect as a SOCKS4 proxy. (Connects as SOCKS4a when the host name is known)
 
 * [Start] button
   * Start the VPN service.
@@ -36,11 +46,11 @@ Configure VPN service settings.
 
 ![Menu Settings](images/Menu-Settings.png) ⇒ ![Menu Settings](images/Menu-Settings-app.png)
 
-## VPN connection setting
-
 There are two modes, Disallowed Application and Allowed Application, but you can not specify them at the same time.
 Because of this you will have to choose whether you want to run in either mode.
 The default is **Disallowed Application** selected.
+
+## VPN connection setting
 
 * Disallowed Application
   * Select the application you want to exclude from VPN service.
@@ -71,7 +81,7 @@ Changed the way the application list is displayed.
 * show system app
   * show system application
 
-### sort by
+#### sort by
 
 * app name
   * Sort application list by application name
@@ -79,7 +89,7 @@ Changed the way the application list is displayed.
 * package name
   * Sort application list by package name
 
-### order by
+#### order by
 
 * ascending
   * Sorting in ascending order
@@ -87,7 +97,7 @@ Changed the way the application list is displayed.
 * descending
   * Sorting in descending order
 
-### filter by
+#### filter by
 
 * app name
   * Search for the application name that contains the keyword you specified.

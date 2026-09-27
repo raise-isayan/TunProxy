@@ -28,6 +28,8 @@ TunProxyアプリを起動すると以下の画面が起動します。
      HTTPプロキシとして接続します。
   * SOCKS5
      SOCKS5プロキシとして接続します。
+  * SOCKS4
+     SOCKS4プロキシとして接続します。(ホスト名が判明している場合は SOCKS4a として接続します)
 
 * [Start] ボタン
   * 接続を開始します。
@@ -70,7 +72,7 @@ Disallowed Application と Allowed Application の２つのモードがありま
 画面上部の検索アイコン(![Menu](images/Search.png))から、アプリケーションを絞り込めます。
 アプリケーション名または、パッケージ名に指定したキーワードを含むアプリケーションのみが表示されます。
 
-プリケーションリストは、画面上部のメニューアイコン(![Menu](images/Menu.png))からソートできます。
+アプリケーションリストは、画面上部のメニューアイコン(![Menu](images/Menu.png))からソートできます。
 
 ### Settings Menu
 
@@ -121,7 +123,7 @@ DNSサーバの設定を行います。
 
 ## Profile Settings
 
-### Profile Lis
+### Profile List
 
 プロファイルの一覧が表示されます。
 
