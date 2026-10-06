@@ -49,6 +49,9 @@ public class MainActivity extends AppCompatActivity {
     Button stopButton;
     EditText hostPortEditText;
     Spinner proxyTypeSpinner;
+    Spinner authMethodSpinner;
+    EditText usernameEditText;
+    EditText passwordEditText;
     Spinner profileSpinner;
     private List<ProfileItem> profileList;
     private ArrayAdapter<ProfileItem> profileAdapter;
@@ -90,12 +93,44 @@ public class MainActivity extends AppCompatActivity {
         stopButton = findViewById(R.id.stop);
         hostPortEditText = findViewById(R.id.host);
         proxyTypeSpinner = findViewById(R.id.proxy_type);
+        authMethodSpinner = findViewById(R.id.auth_method);
+        usernameEditText = findViewById(R.id.username);
+        passwordEditText = findViewById(R.id.password);
         profileSpinner = findViewById(R.id.spinner_profile);
 
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.proxy_types, R.layout.spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         proxyTypeSpinner.setAdapter(adapter);
+        proxyTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (!getSelectedProxyType().isAuthSupported()) {
+                    authMethodSpinner.setSelection(MyApplication.AuthMethod.NONE.ordinal());
+                }
+                authMethodSpinner.setEnabled(proxyTypeSpinner.isEnabled() && getSelectedProxyType().isAuthSupported());
+                updateAuthVisibility();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
+        ArrayAdapter<CharSequence> authAdapter = ArrayAdapter.createFromResource(this,
+                R.array.auth_methods, R.layout.spinner_item);
+        authAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        authMethodSpinner.setAdapter(authAdapter);
+        authMethodSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                updateAuthVisibility();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
 
         setupProfileSpinner();
 
@@ -122,21 +157,29 @@ public class MainActivity extends AppCompatActivity {
         profileList.addAll(MyApplication.getInstance().loadProfiles());
 
         profileAdapter = new ArrayAdapter<>(this, R.layout.spinner_item, profileList);
-        profileAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        profileAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         profileSpinner.setAdapter(profileAdapter);
 
         profileSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 hostPortEditText.setError(null);
+                usernameEditText.setError(null);
                 if (position == 0) { // "Manual"
                     hostPortEditText.setText("");
                     proxyTypeSpinner.setSelection(MyApplication.ProxyType.HTTP.ordinal());
+                    authMethodSpinner.setSelection(MyApplication.AuthMethod.NONE.ordinal());
+                    usernameEditText.setText("");
+                    passwordEditText.setText("");
                 } else if (position > 0) { // Not "Manual"
                     ProfileItem profile = profileList.get(position);
                     hostPortEditText.setText(HostPortPair.valueOf(profile.getHost(), profile.getPort()));
                     proxyTypeSpinner.setSelection(profile.getType().ordinal());
+                    authMethodSpinner.setSelection(profile.getAuthMethod().ordinal());
+                    usernameEditText.setText(profile.getUsername());
+                    passwordEditText.setText(profile.getPassword());
                 }
+                updateAuthVisibility();
             }
 
             @Override
@@ -251,12 +294,18 @@ public class MainActivity extends AppCompatActivity {
             startButton.setEnabled(false);
             hostPortEditText.setEnabled(false);
             proxyTypeSpinner.setEnabled(false);
+            authMethodSpinner.setEnabled(false);
+            usernameEditText.setEnabled(false);
+            passwordEditText.setEnabled(false);
             profileSpinner.setEnabled(false);
             stopButton.setEnabled(true);
         } else {
             startButton.setEnabled(true);
             hostPortEditText.setEnabled(true);
             proxyTypeSpinner.setEnabled(true);
+            authMethodSpinner.setEnabled(getSelectedProxyType().isAuthSupported());
+            usernameEditText.setEnabled(true);
+            passwordEditText.setEnabled(true);
             profileSpinner.setEnabled(true);
             stopButton.setEnabled(false);
         }
@@ -331,6 +380,30 @@ public class MainActivity extends AppCompatActivity {
         }
         hostPortEditText.setText(HostPortPair.valueOf(proxyHost, proxyPort));
         proxyTypeSpinner.setSelection(proxyType.ordinal());
+
+        String authMethodName = prefs.getString(Tun2HttpVpnService.PREF_PROXY_AUTH_METHOD, MyApplication.AuthMethod.NONE.name());
+        MyApplication.AuthMethod authMethod = Enum.valueOf(MyApplication.AuthMethod.class, authMethodName);
+        authMethodSpinner.setSelection(authMethod.ordinal());
+        usernameEditText.setText(prefs.getString(Tun2HttpVpnService.PREF_PROXY_USERNAME, ""));
+        passwordEditText.setText(prefs.getString(Tun2HttpVpnService.PREF_PROXY_PASSWORD, ""));
+        updateAuthVisibility();
+    }
+
+    private MyApplication.ProxyType getSelectedProxyType() {
+        return MyApplication.ProxyType.values()[proxyTypeSpinner.getSelectedItemPosition()];
+    }
+
+    private MyApplication.AuthMethod getSelectedAuthMethod() {
+        if (!getSelectedProxyType().isAuthSupported()) {
+            return MyApplication.AuthMethod.NONE;
+        }
+        return MyApplication.AuthMethod.values()[authMethodSpinner.getSelectedItemPosition()];
+    }
+
+    private void updateAuthVisibility() {
+        int visibility = getSelectedAuthMethod() == MyApplication.AuthMethod.USERNAME_PASSWORD ? View.VISIBLE : View.GONE;
+        usernameEditText.setVisibility(visibility);
+        passwordEditText.setVisibility(visibility);
     }
 
     private boolean parseAndSaveHostPort() {
@@ -338,6 +411,19 @@ public class MainActivity extends AppCompatActivity {
         if (!NetUtil.isValidHostPort(proxyTarget)) {
             hostPortEditText.setError(getString(R.string.enter_host));
             return false;
+        }
+        MyApplication.AuthMethod authMethod = getSelectedAuthMethod();
+        String username = usernameEditText.getText().toString();
+        String password = passwordEditText.getText().toString();
+        if (authMethod == MyApplication.AuthMethod.USERNAME_PASSWORD) {
+            if (username.isEmpty()) {
+                usernameEditText.setError(getString(R.string.auth_error_username));
+                return false;
+            }
+            if (!ProfileItem.isValidCredential(username) || !ProfileItem.isValidCredential(password)) {
+                usernameEditText.setError(getString(R.string.auth_error_length));
+                return false;
+            }
         }
         try {
             // host:port 分離
@@ -350,6 +436,9 @@ public class MainActivity extends AppCompatActivity {
             edit.putString(Tun2HttpVpnService.PREF_PROXY_HOST, host);
             edit.putInt(Tun2HttpVpnService.PREF_PROXY_PORT, port);
             edit.putString(Tun2HttpVpnService.PREF_PROXY_TYPE, proxyType);
+            edit.putString(Tun2HttpVpnService.PREF_PROXY_AUTH_METHOD, authMethod.name());
+            edit.putString(Tun2HttpVpnService.PREF_PROXY_USERNAME, username);
+            edit.putString(Tun2HttpVpnService.PREF_PROXY_PASSWORD, password);
             edit.apply();
         } catch (NumberFormatException e) {
             hostPortEditText.setError(getString(R.string.enter_host));

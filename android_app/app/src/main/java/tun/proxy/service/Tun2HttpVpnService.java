@@ -24,8 +24,14 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -42,6 +48,10 @@ public class Tun2HttpVpnService extends VpnService {
     public static final String PREF_PROXY_HOST = "pref_proxy_host";
     public static final String PREF_PROXY_PORT = "pref_proxy_port";
     public static final String PREF_PROXY_TYPE = "pref_proxy_type";
+    public static final String PREF_PROXY_AUTH_METHOD = "pref_proxy_auth_method";
+    public static final String PREF_PROXY_USERNAME = "pref_proxy_username";
+    public static final String PREF_PROXY_PASSWORD = "pref_proxy_password";
+    private static final int AUTH_PROBE_TIMEOUT = 5000; // milliseconds
     private static final String ACTION_START = "start";
     private static final String ACTION_STOP = "stop";
     private static volatile PowerManager.WakeLock wlInstance = null;
@@ -75,7 +85,8 @@ public class Tun2HttpVpnService extends VpnService {
 
     private native void jni_init();
 
-    private native void jni_start(int tun, boolean fwd53, int rcode, String proxyIp, int proxyPort, int proxyType);
+    private native void jni_start(int tun, boolean fwd53, int rcode, String proxyIp, int proxyPort, int proxyType,
+                                  String proxyUser, String proxyPass, String authChallenge);
 
     private native void jni_stop(int tun);
 
@@ -205,6 +216,11 @@ public class Tun2HttpVpnService extends VpnService {
         final int proxyPort = prefs.getInt(PREF_PROXY_PORT, -1);
         final String proxyTypeName = prefs.getString(PREF_PROXY_TYPE, MyApplication.ProxyType.HTTP.name());
         final MyApplication.ProxyType proxyType = Enum.valueOf(MyApplication.ProxyType.class, proxyTypeName);
+        final String authMethodName = prefs.getString(PREF_PROXY_AUTH_METHOD, MyApplication.AuthMethod.NONE.name());
+        final MyApplication.AuthMethod authMethod = Enum.valueOf(MyApplication.AuthMethod.class, authMethodName);
+        final boolean useAuth = proxyType.isAuthSupported() && authMethod == MyApplication.AuthMethod.USERNAME_PASSWORD;
+        final String proxyUser = useAuth ? prefs.getString(PREF_PROXY_USERNAME, "") : "";
+        final String proxyPass = useAuth ? prefs.getString(PREF_PROXY_PASSWORD, "") : "";
 
         if (NetUtil.isValidHost(proxyHost) && NetUtil.isValiPort(proxyPort)) {
             new Thread(() -> {
@@ -222,13 +238,61 @@ public class Tun2HttpVpnService extends VpnService {
                 }
 
                 final String finalProxyIp = proxyIp;
-                jni_start(vpn.getFd(), false, 3, finalProxyIp, proxyPort, proxyType.ordinal());
+                // HTTP proxy: learn whether Basic or Digest is required before the first request
+                String authChallenge = "";
+                if (proxyType == MyApplication.ProxyType.HTTP && !TextUtils.isEmpty(proxyUser)) {
+                    authChallenge = probeProxyAuthChallenge(finalProxyIp, proxyPort);
+                }
+                jni_start(vpn.getFd(), false, 3, finalProxyIp, proxyPort, proxyType.ordinal(),
+                        proxyUser, proxyPass, authChallenge);
                 MyApplication app = (MyApplication) getApplication();
                 if (app != null) {
                     app.storeProxyRunning(true);
                 }
             }).start();
         }
+    }
+
+    /**
+     * Send a CONNECT request without credentials to the HTTP proxy
+     * and return the response header when authentication is required.
+     */
+    private String probeProxyAuthChallenge(String proxyIp, int proxyPort) {
+        try (Socket socket = new Socket()) {
+            // bind creates the file descriptor, so that it can be excluded from the VPN
+            socket.bind(null);
+            if (!protect(socket)) {
+                Log.w(TAG, "Proxy authentication probe: protect failed");
+                return "";
+            }
+            socket.connect(new InetSocketAddress(proxyIp, proxyPort), AUTH_PROBE_TIMEOUT);
+            socket.setSoTimeout(AUTH_PROBE_TIMEOUT);
+            String target = (proxyIp.contains(":") ? "[" + proxyIp + "]" : proxyIp) + ":" + proxyPort;
+            String request = "CONNECT " + target + " HTTP/1.1\r\nHost: " + target + "\r\n\r\n";
+            OutputStream out = socket.getOutputStream();
+            out.write(request.getBytes(StandardCharsets.ISO_8859_1));
+            out.flush();
+
+            InputStream in = socket.getInputStream();
+            ByteArrayOutputStream header = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int len;
+            while (header.size() < 16 * 1024 && (len = in.read(buffer)) > 0) {
+                header.write(buffer, 0, len);
+                String response = header.toString(StandardCharsets.ISO_8859_1.name());
+                int end = response.indexOf("\r\n\r\n");
+                if (end >= 0) {
+                    response = response.substring(0, end + 4);
+                    if (response.matches("(?s)HTTP/1\\.\\d 407.*")) {
+                        return response;
+                    }
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            Log.w(TAG, "Proxy authentication probe failed: " + e.getMessage());
+        }
+        return "";
     }
 
     private void stopNative(ParcelFileDescriptor vpn) {

@@ -7,6 +7,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -72,7 +73,11 @@ public class ProfileSettingsActivity extends AppCompatActivity {
 
                     textName.setText(item.getName());
                     textHostPort.setText(HostPortPair.valueOf(item.getHost(), item.getPort()));
-                    textType.setText(item.getType().name());
+                    if (item.getAuthMethod() == MyApplication.AuthMethod.USERNAME_PASSWORD) {
+                        textType.setText(getString(R.string.profile_item_auth, item.getType().name()));
+                    } else {
+                        textType.setText(item.getType().name());
+                    }
 
                     boolean running = MyApplication.getInstance().loadProxyRunning(false);
                     btnEdit.setEnabled(!running);
@@ -128,12 +133,53 @@ public class ProfileSettingsActivity extends AppCompatActivity {
         EditText editName = dialogView.findViewById(R.id.edit_name);
         EditText editHostPort = dialogView.findViewById(R.id.edit_host_port);
         Spinner spinnerType = dialogView.findViewById(R.id.spinner_type);
+        Spinner spinnerAuthMethod = dialogView.findViewById(R.id.spinner_auth_method);
+        EditText editUsername = dialogView.findViewById(R.id.edit_username);
+        EditText editPassword = dialogView.findViewById(R.id.edit_password);
         TextView textError = dialogView.findViewById(R.id.text_error);
+
+        ArrayAdapter<CharSequence> typeAdapter = ArrayAdapter.createFromResource(this,
+                R.array.proxy_types, R.layout.spinner_item);
+        typeAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        spinnerType.setAdapter(typeAdapter);
+
+        ArrayAdapter<CharSequence> authAdapter = ArrayAdapter.createFromResource(this,
+                R.array.auth_methods, R.layout.spinner_item);
+        authAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
+        spinnerAuthMethod.setAdapter(authAdapter);
+
+        Runnable updateAuthViews = () -> {
+            MyApplication.ProxyType type = MyApplication.ProxyType.values()[spinnerType.getSelectedItemPosition()];
+            if (!type.isAuthSupported()) {
+                spinnerAuthMethod.setSelection(MyApplication.AuthMethod.NONE.ordinal());
+            }
+            spinnerAuthMethod.setEnabled(type.isAuthSupported());
+            boolean useAuth = type.isAuthSupported()
+                    && MyApplication.AuthMethod.values()[spinnerAuthMethod.getSelectedItemPosition()] == MyApplication.AuthMethod.USERNAME_PASSWORD;
+            int visibility = useAuth ? View.VISIBLE : View.GONE;
+            editUsername.setVisibility(visibility);
+            editPassword.setVisibility(visibility);
+        };
+        AdapterView.OnItemSelectedListener authListener = new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                updateAuthViews.run();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        };
+        spinnerType.setOnItemSelectedListener(authListener);
+        spinnerAuthMethod.setOnItemSelectedListener(authListener);
 
         if (profile != null) {
             editName.setText(profile.getName());
             editHostPort.setText(HostPortPair.valueOf(profile.getHost(), profile.getPort()));
             spinnerType.setSelection(profile.getType().ordinal());
+            spinnerAuthMethod.setSelection(profile.getAuthMethod().ordinal());
+            editUsername.setText(profile.getUsername());
+            editPassword.setText(profile.getPassword());
         }
 
         AlertDialog dialog = new AlertDialog.Builder(this)
@@ -158,6 +204,27 @@ public class ProfileSettingsActivity extends AppCompatActivity {
                 textError.setVisibility(View.VISIBLE);
                 return;
             }
+            MyApplication.AuthMethod authMethod = MyApplication.AuthMethod.values()[spinnerAuthMethod.getSelectedItemPosition()];
+            if (!MyApplication.ProxyType.values()[spinnerType.getSelectedItemPosition()].isAuthSupported()) {
+                authMethod = MyApplication.AuthMethod.NONE;
+            }
+            String username = editUsername.getText().toString();
+            String password = editPassword.getText().toString();
+            if (authMethod == MyApplication.AuthMethod.USERNAME_PASSWORD) {
+                if (username.isEmpty()) {
+                    textError.setText(R.string.auth_error_username);
+                    textError.setVisibility(View.VISIBLE);
+                    return;
+                }
+                if (!ProfileItem.isValidCredential(username) || !ProfileItem.isValidCredential(password)) {
+                    textError.setText(R.string.auth_error_length);
+                    textError.setVisibility(View.VISIBLE);
+                    return;
+                }
+            } else {
+                username = "";
+                password = "";
+            }
             try {
                 HostPortPair hostPortPair = HostPortPair.parse(hostPort);
                 String host = hostPortPair.getHost();
@@ -169,12 +236,15 @@ public class ProfileSettingsActivity extends AppCompatActivity {
                 }
                 MyApplication.ProxyType type = MyApplication.ProxyType.values()[spinnerType.getSelectedItemPosition()];
                 if (profile == null) {
-                    profileList.add(new ProfileItem(name, host, port, type));
+                    profileList.add(new ProfileItem(name, host, port, type, authMethod, username, password));
                 } else {
                     profile.setName(name);
                     profile.setHost(host);
                     profile.setPort(port);
                     profile.setType(type);
+                    profile.setAuthMethod(authMethod);
+                    profile.setUsername(username);
+                    profile.setPassword(password);
                 }
                 MyApplication.getInstance().storeProfiles(profileList);
                 adapter.notifyDataSetChanged();

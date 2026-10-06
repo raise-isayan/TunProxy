@@ -48,6 +48,12 @@
         <item>ALLOW</item>
     </string-array>
 
+    <!-- Proxy Label -->
+    <string name="proxy_profile">Proxy profile</string>
+    <string name="proxy_target">Proxy target</string>
+    <string name="proxy_protocol">Proxy protocol</string>
+    <string name="proxy_auth_method">Authentication method</string>
+
     <!-- Proxy Setting -->
     <string name="proxy_setting">Proxy Setting</string>
     <string name="pref_connectivity_check">Connectivity Check</string>
@@ -57,6 +63,17 @@
         <item>SOCKS5</item>
         <item>SOCKS4</item>
     </string-array>
+
+    <!-- Proxy Authentication -->
+    <string-array name="auth_methods">
+        <item>None</item>
+        <item>Username/Password</item>
+    </string-array>
+    <string name="auth_username">Username</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_error_username">Please enter username</string>
+    <string name="auth_error_length">Username and password must be 255 bytes or less</string>
+    <string name="profile_item_auth">%1$s (Auth)</string>
 
     <!-- DNS Setting -->
     <string name="dns_setting">DNS Setting</string>

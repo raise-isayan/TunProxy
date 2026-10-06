@@ -93,7 +93,16 @@ public class MyApplication extends Application {
 
     public enum AppOrderBy {ASC, DESC}
 
-    public enum ProxyType {HTTP, SOCKS5, SOCKS4}
+    public enum ProxyType {
+        HTTP, SOCKS5, SOCKS4;
+
+        // SOCKS4 has no username/password authentication
+        public boolean isAuthSupported() {
+            return this != SOCKS4;
+        }
+    }
+
+    public enum AuthMethod {NONE, USERNAME_PASSWORD}
 
     /*
      * Proxy setting

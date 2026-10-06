@@ -9,6 +9,7 @@ add_library( # Sets the name of the library.
         # Sets the library as a shared library.
         SHARED
 
+        src/main/cpp/auth.c
         src/main/cpp/dhcp.c
         src/main/cpp/dns.c
         src/main/cpp/icmp.c

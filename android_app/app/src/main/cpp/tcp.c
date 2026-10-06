@@ -1,6 +1,7 @@
 #include "tun2http.h"
 #include "tls.h"
 #include "http.h"
+#include "auth.h"
 
 extern struct ng_session *ng_session;
 
@@ -117,7 +118,84 @@ static int parse_socks5_reply(const uint8_t *buf, size_t len) {
 // Remove an already peeked proxy reply from the socket
 static int consume_reply(int sock, int len) {
     uint8_t tmp[512];
-    return recv(sock, tmp, (size_t) len, 0) == len;
+    while (len > 0) {
+        ssize_t n = recv(sock, tmp, (size_t) len < sizeof(tmp) ? (size_t) len : sizeof(tmp), 0);
+        if (n <= 0) return 0;
+        len -= (int) n;
+    }
+    return 1;
+}
+
+// Length of the HTTP reply header including the blank line, 0 if incomplete
+static int http_header_length(const uint8_t *buf, size_t len) {
+    for (size_t i = 0; i + 4 <= len; i++) {
+        if (memcmp(buf + i, "\r\n\r\n", 4) == 0) return (int) (i + 4);
+    }
+    return 0;
+}
+
+// Status code of a "HTTP/1.x NNN ..." reply, -1 if malformed
+static int http_status_code(const uint8_t *buf, size_t len) {
+    if (len < 12 || memcmp(buf, "HTTP/1.", 7) != 0 || buf[8] != ' ') return -1;
+    if (!isdigit(buf[9]) || !isdigit(buf[10]) || !isdigit(buf[11])) return -1;
+    return (buf[9] - '0') * 100 + (buf[10] - '0') * 10 + (buf[11] - '0');
+}
+
+static int send_http_connect(const struct tcp_session *t, int sock) {
+    char target[600];
+    char authorization[2048];
+    char request[3300];
+    // IPv6 literal must be enclosed in brackets
+    int ipv6 = (strchr(t->hostname, ':') != NULL);
+    snprintf(target, sizeof(target), "%s%s%s:%d",
+             ipv6 ? "[" : "", t->hostname, ipv6 ? "]" : "", ntohs(t->dest));
+    if (auth_build_header("CONNECT", target, authorization, sizeof(authorization)) <= 0) {
+        authorization[0] = '\0';
+    }
+    int len = snprintf(request, sizeof(request), "CONNECT %s HTTP/1.0\r\nHost: %s\r\n%s\r\n",
+                       target, target, authorization);
+    if (len <= 0 || (size_t) len >= sizeof(request)) return -1;
+    return send(sock, request, (size_t) len, MSG_NOSIGNAL) == len ? 0 : -1;
+}
+
+static int send_socks5_connect(const struct tcp_session *t, int sock) {
+    uint8_t request[300];
+    int reqlen = build_socks5_request(t, request, sizeof(request));
+    if (reqlen < 0) return -1;
+    return send(sock, request, (size_t) reqlen, MSG_NOSIGNAL) == reqlen ? 0 : -1;
+}
+
+// The proxy answered 407: learn the challenge and connect again to send the credentials
+static int retry_proxy_auth(const struct arguments *args, struct ng_session *s,
+                            const uint8_t *reply, size_t len, int epoll_fd) {
+    if (!auth_enabled()) return 0;
+
+    int stale = 0;
+    if (!auth_parse_challenge((const char *) reply, len, &stale)) return 0;
+    // Retry once, more often only when the digest nonce was expired
+    if ((s->tcp.auth_retry > 0 && !stale) || s->tcp.auth_retry >= HTTP_AUTH_MAX_RETRY) return 0;
+
+    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, s->socket, NULL);
+    close(s->socket);
+
+    struct allowed redirect;
+    strcpy(redirect.raddr, args->proxyIp);
+    redirect.rport = args->proxyPort;
+    s->socket = open_tcp_socket(args, &s->tcp, &redirect);
+    if (s->socket < 0) return 0;
+
+    s->tcp.auth_retry++;
+    s->tcp.connect_sent = TCP_CONNECT_RETRY;
+
+    // Wait until connected
+    memset(&s->ev, 0, sizeof(struct epoll_event));
+    s->ev.events = EPOLLOUT | EPOLLERR;
+    s->ev.data.ptr = s;
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, s->socket, &s->ev)) {
+        log_android(ANDROID_LOG_ERROR, "epoll add tcp error %d: %s", errno, strerror(errno));
+        return 0;
+    }
+    return 1;
 }
 
 void clear_tcp_data(struct tcp_session *cur) {
@@ -394,11 +472,10 @@ void check_tcp_socket(const struct arguments *args,
         if (s->tcp.state == TCP_LISTEN) {
             // Check socket connect
             if (ev->events & EPOLLIN) {
-                uint8_t buffer[512];
-                // SOCKS: peek only, so that data sent by the server right after
+                uint8_t buffer[4096];
+                // Peek only, so that data sent by the server right after
                 // the proxy reply is not consumed together with the reply
-                int peek = (args->proxyType != PROXY_TYPE_HTTP);
-                ssize_t bytes = recv(s->socket, buffer, sizeof(buffer) - 1, peek ? MSG_PEEK : 0);
+                ssize_t bytes = recv(s->socket, buffer, sizeof(buffer) - 1, MSG_PEEK);
                 if (bytes <= 0) {
                     log_android(ANDROID_LOG_ERROR, "%s recv error %d: %s",
                                 session, errno, strerror(errno));
@@ -419,14 +496,38 @@ void check_tcp_socket(const struct arguments *args,
                             // Wait for the complete reply
                         } else if (buffer[0] == 0x05 && buffer[1] == 0x00 &&
                                    consume_reply(s->socket, 2)) {
-                            uint8_t request[300];
-                            int reqlen = build_socks5_request(&s->tcp, request, sizeof(request));
-                            if (reqlen < 0) {
+                            if (send_socks5_connect(&s->tcp, s->socket) < 0) {
                                 log_android(ANDROID_LOG_ERROR,
-                                            "%s SOCKS5 invalid destination", session);
+                                            "%s SOCKS5 connect send error %d: %s",
+                                            session, errno, strerror(errno));
                                 write_rst(args, &s->tcp);
-                            } else if (send(s->socket, request, (size_t) reqlen, MSG_NOSIGNAL) !=
-                                       reqlen) {
+                            } else {
+                                s->tcp.socks5_state = SOCKS5_STATE_CONNECT;
+                            }
+                        } else if (buffer[0] == 0x05 && buffer[1] == 0x02 && auth_enabled() &&
+                                   consume_reply(s->socket, 2)) {
+                            // RFC 1929 username/password authentication
+                            uint8_t request[600];
+                            int reqlen = auth_build_socks5_request(request, sizeof(request));
+                            if (reqlen < 0 ||
+                                send(s->socket, request, (size_t) reqlen, MSG_NOSIGNAL) != reqlen) {
+                                log_android(ANDROID_LOG_ERROR,
+                                            "%s SOCKS5 auth send error %d: %s",
+                                            session, errno, strerror(errno));
+                                write_rst(args, &s->tcp);
+                            } else {
+                                s->tcp.socks5_state = SOCKS5_STATE_AUTH;
+                            }
+                        } else {
+                            log_android(ANDROID_LOG_ERROR, "%s SOCKS5 greeting failed method %d",
+                                        session, buffer[1]);
+                            write_rst(args, &s->tcp);
+                        }
+                    } else if (s->tcp.socks5_state == SOCKS5_STATE_AUTH) {
+                        if (bytes < 2) {
+                            // Wait for the complete reply
+                        } else if (buffer[1] == 0x00 && consume_reply(s->socket, 2)) {
+                            if (send_socks5_connect(&s->tcp, s->socket) < 0) {
                                 log_android(ANDROID_LOG_ERROR,
                                             "%s SOCKS5 connect send error %d: %s",
                                             session, errno, strerror(errno));
@@ -435,7 +536,8 @@ void check_tcp_socket(const struct arguments *args,
                                 s->tcp.socks5_state = SOCKS5_STATE_CONNECT;
                             }
                         } else {
-                            log_android(ANDROID_LOG_ERROR, "%s SOCKS5 greeting failed", session);
+                            log_android(ANDROID_LOG_ERROR,
+                                        "%s SOCKS5 authentication failed %d", session, buffer[1]);
                             write_rst(args, &s->tcp);
                         }
                     } else if (s->tcp.socks5_state == SOCKS5_STATE_CONNECT) {
@@ -452,18 +554,37 @@ void check_tcp_socket(const struct arguments *args,
                 } else {
                     if (s->tcp.connect_sent == TCP_CONNECT_SENT) {
                         buffer[bytes] = '\0';
-                        if (strstr((char *) buffer, "HTTP/1.0 200") != NULL ||
-                            strstr((char *) buffer, "HTTP/1.1 200") != NULL) {
-                            s->tcp.connect_sent = TCP_CONNECT_ESTABLISHED;
-                            s->tcp.state = TCP_SYN_RECV;
+                        int hlen = http_header_length(buffer, (size_t) bytes);
+                        if (hlen == 0 && (size_t) bytes < sizeof(buffer) - 1) {
+                            // Wait for the complete reply header
                         } else {
-                            log_android(ANDROID_LOG_ERROR, "%s HTTP CONNECT failed: %s", session,
-                                        buffer);
-                            write_rst(args, &s->tcp);
+                            if (hlen == 0) hlen = (int) bytes;
+                            int status = http_status_code(buffer, (size_t) bytes);
+                            if (status == 200 && consume_reply(s->socket, hlen)) {
+                                s->tcp.connect_sent = TCP_CONNECT_ESTABLISHED;
+                                s->tcp.state = TCP_SYN_RECV;
+                            } else if (status == 407 &&
+                                       retry_proxy_auth(args, s, buffer, (size_t) hlen, epoll_fd)) {
+                                log_android(ANDROID_LOG_WARN, "%s HTTP CONNECT auth retry %d",
+                                            session, s->tcp.auth_retry);
+                            } else {
+                                log_android(ANDROID_LOG_ERROR, "%s HTTP CONNECT failed: %s",
+                                            session, buffer);
+                                write_rst(args, &s->tcp);
+                            }
                         }
                     } else {
                         write_rst(args, &s->tcp);
                     }
+                }
+            } else if (s->tcp.connect_sent == TCP_CONNECT_RETRY) {
+                // Reconnected to the proxy, send CONNECT again with the credentials
+                if (send_http_connect(&s->tcp, s->socket) < 0) {
+                    log_android(ANDROID_LOG_ERROR, "%s HTTP CONNECT send error %d: %s",
+                                session, errno, strerror(errno));
+                    write_rst(args, &s->tcp);
+                } else {
+                    s->tcp.connect_sent = TCP_CONNECT_SENT;
                 }
             } else {
                 s->tcp.remote_seq++; // remote SYN
@@ -623,6 +744,15 @@ void check_tcp_socket(const struct arguments *args,
                         // Socket read data
                         log_android(ANDROID_LOG_DEBUG, "%s recv bytes %d", session, bytes);
                         s->tcp.received += bytes;
+
+                        // Proxy rejected a plain HTTP request: remember the challenge
+                        // so that the following requests are authenticated
+                        if (s->tcp.http_plain && auth_enabled() &&
+                            http_status_code(buffer, (size_t) bytes) == 407) {
+                            int hlen = http_header_length(buffer, (size_t) bytes);
+                            auth_parse_challenge((const char *) buffer,
+                                                 hlen > 0 ? (size_t) hlen : (size_t) bytes, NULL);
+                        }
 
                         // Forward to tun
                         if (write_data(args, &s->tcp, buffer, (size_t) bytes) >= 0) {
@@ -819,6 +949,8 @@ jboolean handle_tcp(const struct arguments *args,
             s->tcp.is_tls = 0;
             s->tcp.hostname[0] = 0;
             s->tcp.socks5_state = 0;
+            s->tcp.auth_retry = 0;
+            s->tcp.http_plain = 0;
 
             if (version == 4) {
                 s->tcp.saddr.ip4 = (__be32) ip4->saddr;
@@ -937,8 +1069,11 @@ jboolean handle_tcp(const struct arguments *args,
                         cur->tcp.state = TCP_LISTEN;
                     }
                 } else if (args->proxyType == PROXY_TYPE_SOCKS5) {
-                    uint8_t greeting[] = {0x05, 0x01, 0x00};
-                    ssize_t sent = send(cur->socket, greeting, sizeof(greeting), MSG_NOSIGNAL);
+                    // Offer username/password authentication (0x02) when configured
+                    uint8_t greeting[] = {0x05, 0x02, 0x00, 0x02};
+                    size_t greeting_len = auth_enabled() ? 4 : 3;
+                    if (!auth_enabled()) greeting[1] = 0x01;
+                    ssize_t sent = send(cur->socket, greeting, greeting_len, MSG_NOSIGNAL);
                     if (sent < 0) {
                         log_android(ANDROID_LOG_ERROR, "%s SOCKS5 greeting send error %d: %s",
                                     packet, errno, strerror(errno));
@@ -950,14 +1085,7 @@ jboolean handle_tcp(const struct arguments *args,
                     }
                 } else if (is_tls || rport == 443 || (!is_http && rport != 80)) {
                     if (cur->tcp.hostname[0] != 0) {
-                        char buffer[600];
-                        // IPv6 literal must be enclosed in brackets
-                        int ipv6 = (strchr(cur->tcp.hostname, ':') != NULL);
-                        snprintf(buffer, sizeof(buffer), "CONNECT %s%s%s:%d HTTP/1.0\r\n\r\n",
-                                 ipv6 ? "[" : "", cur->tcp.hostname, ipv6 ? "]" : "", rport);
-
-                        ssize_t sent = send(cur->socket, buffer, strlen(buffer), MSG_NOSIGNAL);
-                        if (sent < 0) {
+                        if (send_http_connect(&cur->tcp, cur->socket) < 0) {
                             write_rst(args, &cur->tcp);
                         } else {
                             cur->tcp.connect_sent = TCP_CONNECT_SENT;
@@ -966,6 +1094,7 @@ jboolean handle_tcp(const struct arguments *args,
                     }
                 } else {
                     cur->tcp.connect_sent = TCP_CONNECT_ESTABLISHED;
+                    cur->tcp.http_plain = (args->proxyType == PROXY_TYPE_HTTP);
                 }
             }
         }

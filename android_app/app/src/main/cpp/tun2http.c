@@ -1,5 +1,6 @@
 
 #include "tun2http.h"
+#include "auth.h"
 
 JavaVM *jvm = NULL;
 int pipefds[2];
@@ -79,9 +80,13 @@ Java_tun_proxy_service_Tun2HttpVpnService_jni_1init(JNIEnv *env, jobject instanc
 JNIEXPORT void JNICALL
 Java_tun_proxy_service_Tun2HttpVpnService_jni_1start(
         JNIEnv *env, jobject instance, jint tun, jboolean fwd53, jint rcode, jstring proxyIp,
-        jint proxyPort, jint proxyType) {
+        jint proxyPort, jint proxyType, jstring proxyUser, jstring proxyPass,
+        jstring authChallenge) {
 
     const char *proxy_ip = (*env)->GetStringUTFChars(env, proxyIp, 0);
+    const char *proxy_user = (*env)->GetStringUTFChars(env, proxyUser, 0);
+    const char *proxy_pass = (*env)->GetStringUTFChars(env, proxyPass, 0);
+    const char *auth_challenge = (*env)->GetStringUTFChars(env, authChallenge, 0);
 
     max_tun_msg = 0;
 
@@ -111,6 +116,10 @@ Java_tun_proxy_service_Tun2HttpVpnService_jni_1start(
         args->proxyPort = proxyPort;
         args->proxyType = proxyType;
 
+        auth_init(proxy_user, proxy_pass);
+        if (auth_enabled() && auth_challenge[0] != '\0') {
+            auth_parse_challenge(auth_challenge, strlen(auth_challenge), NULL);
+        }
 
         // Start native thread
         int err = pthread_create(&thread_id, NULL, handle_events, (void *) args);
@@ -123,6 +132,9 @@ Java_tun_proxy_service_Tun2HttpVpnService_jni_1start(
     }
 
     (*env)->ReleaseStringUTFChars(env, proxyIp, proxy_ip);
+    (*env)->ReleaseStringUTFChars(env, proxyUser, proxy_user);
+    (*env)->ReleaseStringUTFChars(env, proxyPass, proxy_pass);
+    (*env)->ReleaseStringUTFChars(env, authChallenge, auth_challenge);
 }
 
 JNIEXPORT void JNICALL

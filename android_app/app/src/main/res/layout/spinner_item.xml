@@ -4,6 +4,6 @@
     style="?android:attr/spinnerItemStyle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="center"
+    android:gravity="start|center_vertical"
     android:padding="8dp"
-    android:textAlignment="center" />
+    android:textAlignment="viewStart" />

@@ -12,53 +12,123 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
+        android:gravity="center|top"
         android:orientation="vertical"
         app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
         tools:layout_editor_absoluteY="0dp">
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/proxy_profile"
+            android:textSize="12sp" />
 
         <Spinner
             android:id="@+id/spinner_profile"
-            android:layout_width="200dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/proxy_target"
+            android:textSize="12sp" />
+
         <EditText
             android:id="@+id/host"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:autofillHints=""
-            android:gravity="center"
             android:hint="@string/host_hint"
             android:inputType="text"
             android:maxLines="1"
-            android:minWidth="60dp"
             android:singleLine="true" />
 
         <Space
             android:layout_width="match_parent"
             android:layout_height="12dp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/proxy_protocol"
+            android:textSize="12sp" />
+
         <Spinner
             android:id="@+id/proxy_type"
-            android:layout_width="200dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
         <Space
             android:layout_width="match_parent"
             android:layout_height="12dp" />
 
-        <Button
-            android:id="@+id/start"
-            android:layout_width="wrap_content"
+        <TextView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/start" />
+            android:text="@string/proxy_auth_method"
+            android:textSize="12sp" />
 
-        <Button
-            android:id="@+id/stop"
-            android:layout_width="wrap_content"
+        <Spinner
+            android:id="@+id/auth_method"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <EditText
+            android:id="@+id/username"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/stop" />
+            android:autofillHints="username"
+            android:hint="@string/auth_username"
+            android:inputType="text"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="password"
+            android:hint="@string/auth_password"
+            android:inputType="textPassword"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:visibility="gone" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="bottom|center"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/start"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/start" />
+
+            <Button
+                android:id="@+id/stop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/stop" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="12dp" />
+        </LinearLayout>
 
     </LinearLayout>
 

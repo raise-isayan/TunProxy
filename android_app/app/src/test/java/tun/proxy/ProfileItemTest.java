@@ -59,6 +59,50 @@ public class ProfileItemTest {
 
 
     @Test
+    public void testAuthSerialization() throws JSONException {
+        ProfileItem item = new ProfileItem("Auth Profile", "127.0.0.1", 8080, MyApplication.ProxyType.HTTP,
+                MyApplication.AuthMethod.USERNAME_PASSWORD, "user", "pass");
+        JSONObject json = item.toJSONObject();
+
+        assertEquals("USERNAME_PASSWORD", json.getString("auth"));
+        assertEquals("user", json.getString("username"));
+        assertEquals("pass", json.getString("password"));
+
+        ProfileItem item2 = ProfileItem.fromJSONObject(json);
+        assertEquals(MyApplication.AuthMethod.USERNAME_PASSWORD, item2.getAuthMethod());
+        assertEquals("user", item2.getUsername());
+        assertEquals("pass", item2.getPassword());
+        assertTrue(item.equals(item2));
+
+        item2.setPassword("other");
+        assertFalse(item.equals(item2));
+    }
+
+    @Test
+    public void testLegacyJSON() throws JSONException {
+        // Profiles saved before authentication support
+        JSONObject json = new JSONObject();
+        json.put("name", "Old Profile");
+        json.put("host", "127.0.0.1");
+        json.put("port", 1080);
+        json.put("type", "SOCKS5");
+
+        ProfileItem item = ProfileItem.fromJSONObject(json);
+        assertEquals(MyApplication.AuthMethod.NONE, item.getAuthMethod());
+        assertEquals("", item.getUsername());
+        assertEquals("", item.getPassword());
+    }
+
+    @Test
+    public void testIsValidCredential() {
+        assertTrue(ProfileItem.isValidCredential(""));
+        assertTrue(ProfileItem.isValidCredential(new String(new char[255]).replace('\0', 'a')));
+        assertFalse(ProfileItem.isValidCredential(new String(new char[256]).replace('\0', 'a')));
+        // 3 bytes per character in UTF-8
+        assertFalse(ProfileItem.isValidCredential(new String(new char[86]).replace('\0', '\u3042')));
+    }
+
+    @Test
     public void testToString() {
         ProfileItem item = new ProfileItem("Profile Name", "host", 80, MyApplication.ProxyType.HTTP);
         assertEquals("Profile Name", item.toString());
