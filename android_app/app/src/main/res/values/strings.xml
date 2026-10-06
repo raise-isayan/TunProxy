@@ -49,8 +49,8 @@
     </string-array>
 
     <!-- Proxy Label -->
-    <string name="proxy_profile">Proxy profile</string>
-    <string name="proxy_target">Proxy target</string>
+    <string name="proxy_profile">Proxy select profile</string>
+    <string name="proxy_address">Proxy address</string>
     <string name="proxy_protocol">Proxy protocol</string>
     <string name="proxy_auth_method">Authentication method</string>
 

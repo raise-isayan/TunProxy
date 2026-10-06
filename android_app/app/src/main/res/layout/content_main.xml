@@ -38,7 +38,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/proxy_target"
+            android:text="@string/proxy_address"
             android:textSize="12sp" />
 
         <EditText

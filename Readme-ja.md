@@ -14,7 +14,7 @@ TunProxyアプリを起動すると以下の画面が起動します。
 
 ![Tun Proxy](images/TunProxy.png)
 
-* Profile 選択
+* Proxy Profile 選択
   * 選択したプロファイルを適用します。
   * Manual
     * 手動で設定します。
@@ -30,6 +30,12 @@ TunProxyアプリを起動すると以下の画面が起動します。
      SOCKS5プロキシとして接続します。
   * SOCKS4
      SOCKS4プロキシとして接続します。(ホスト名が判明している場合は SOCKS4a として接続します)
+
+* Authentication method
+  * None
+     認証なし
+  * Username/Password
+     ユーザ/パスワード指定
 
 * [Start] ボタン
   * 接続を開始します。

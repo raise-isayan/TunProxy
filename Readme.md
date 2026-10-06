@@ -14,7 +14,7 @@ When you start the TunProxy application, the following screen will be launched.
 
 ![Tun Proxy](images/TunProxy.png)
 
-* Select Profile
+* Proxy Select Profile
   * Apply the selected profile.
   * Manual
     * Configure it manually.
@@ -30,6 +30,12 @@ When you start the TunProxy application, the following screen will be launched.
      Connect as a SOCKS5 proxy.
   * SOCKS4
      Connect as a SOCKS4 proxy. (Connects as SOCKS4a when the host name is known)
+
+* Authentication method
+  * None
+     No authentication
+  * Username/Password
+     Specify username and password
 
 * [Start] button
   * Start the VPN service.
