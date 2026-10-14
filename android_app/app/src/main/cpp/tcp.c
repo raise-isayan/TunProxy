@@ -613,7 +613,10 @@ void check_tcp_socket(const struct arguments *args,
                     size_t len = s->tcp.forward->len - s->tcp.forward->sent;
                     size_t newlen = len;
                     uint8_t *new_data = 0;
-                    if (args->proxyType == PROXY_TYPE_HTTP && s->tcp.is_http) {
+                    // Decide per segment: the request may be followed by body segments
+                    // or ACKs that are received before it is forwarded
+                    if (s->tcp.http_plain && s->tcp.forward->sent == 0 &&
+                        is_http_payload(data, len)) {
                         new_data = patch_http_url(data, &newlen);
                         if (new_data) {
                             data = new_data;
@@ -984,6 +987,7 @@ jboolean handle_tcp(const struct arguments *args,
             s->socket = open_tcp_socket(args, &s->tcp, &redirect);
             if (s->socket < 0) {
                 // Remote might retry
+                clear_tcp_data(&s->tcp);
                 free(s);
                 goto free;
             }
@@ -1315,6 +1319,7 @@ void queue_tcp(const struct arguments *args,
                 s->data = malloc(datalen);
                 memcpy(s->data, data, datalen);
                 s->len = datalen;
+                s->psh = tcphdr->psh;
             } else {
                 log_android(ANDROID_LOG_ERROR, "%s segment larger %u..%u < %u",
                             session,
@@ -1348,14 +1353,17 @@ int open_tcp_socket(const struct arguments *args,
     }
 
     // Protect
-    if (protect_socket(args, sock) < 0)
+    if (protect_socket(args, sock) < 0) {
+        close(sock);
         return -1;
+    }
 
     // Set non blocking
     int flags = fcntl(sock, F_GETFL, 0);
     if (flags < 0 || fcntl(sock, F_SETFL, flags | O_NONBLOCK) < 0) {
         log_android(ANDROID_LOG_ERROR, "fcntl socket O_NONBLOCK error %d: %s",
                     errno, strerror(errno));
+        close(sock);
         return -1;
     }
 
@@ -1395,6 +1403,7 @@ int open_tcp_socket(const struct arguments *args,
                                    : sizeof(struct sockaddr_in6)));
     if (err < 0 && errno != EINPROGRESS) {
         log_android(ANDROID_LOG_ERROR, "connect error %d: %s", errno, strerror(errno));
+        close(sock);
         return -1;
     }
 

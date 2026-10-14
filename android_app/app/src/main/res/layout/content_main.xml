@@ -49,6 +49,7 @@
             android:hint="@string/host_hint"
             android:inputType="text"
             android:maxLines="1"
+            android:maxLength="250"
             android:singleLine="true" />
 
         <Space
@@ -89,6 +90,7 @@
             android:hint="@string/auth_username"
             android:inputType="text"
             android:maxLines="1"
+            android:maxLength="250"
             android:singleLine="true"
             android:visibility="gone" />
 
@@ -100,6 +102,7 @@
             android:hint="@string/auth_password"
             android:inputType="textPassword"
             android:maxLines="1"
+            android:maxLength="250"
             android:singleLine="true"
             android:visibility="gone" />
 

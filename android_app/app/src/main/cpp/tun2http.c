@@ -210,13 +210,12 @@ int protect_socket(const struct arguments *args, int socket) {
     jboolean isProtected = (*args->env)->CallBooleanMethod(
             args->env, args->instance, midProtect, socket);
     jniCheckException(args->env);
+    (*args->env)->DeleteLocalRef(args->env, cls);
 
     if (!isProtected) {
         log_android(ANDROID_LOG_ERROR, "protect socket failed");
         return -1;
     }
-
-    (*args->env)->DeleteLocalRef(args->env, cls);
 
     return 0;
 }

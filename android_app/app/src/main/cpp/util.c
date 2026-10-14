@@ -2,7 +2,7 @@
 
 extern int loglevel;
 
-#define LOG_TAG "tun2http_naitive"
+#define LOG_TAG "tun2http_native"
 
 uint16_t calc_checksum(uint16_t start, const uint8_t *buffer, size_t length) {
     register uint32_t sum = start;

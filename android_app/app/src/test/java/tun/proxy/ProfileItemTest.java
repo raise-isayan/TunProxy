@@ -53,8 +53,8 @@ public class ProfileItemTest {
     public void testEq()  {
         ProfileItem item1 = new ProfileItem("Test Profile", "127.0.0.1", 8080, MyApplication.ProxyType.HTTP);
         ProfileItem item2 = new ProfileItem("Test Profile", "127.0.0.1", 8080, MyApplication.ProxyType.HTTP);
-        assertFalse(item1.equals(null));
-        assertTrue(item1.equals(item2));
+        assertNotEquals(null, item1);
+        assertEquals(item1, item2);
     }
 
 
@@ -72,10 +72,10 @@ public class ProfileItemTest {
         assertEquals(MyApplication.AuthMethod.USERNAME_PASSWORD, item2.getAuthMethod());
         assertEquals("user", item2.getUsername());
         assertEquals("pass", item2.getPassword());
-        assertTrue(item.equals(item2));
+        assertEquals(item, item2);
 
         item2.setPassword("other");
-        assertFalse(item.equals(item2));
+        assertNotEquals(item, item2);
     }
 
     @Test

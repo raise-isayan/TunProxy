@@ -902,4 +902,3 @@ public class SettingsActivity extends AppCompatActivity implements
         }
     }
 }
-

@@ -26,8 +26,9 @@ public class CertificateUtil {
         boolean found = false;
         try {
             KeyStore ks = KeyStore.getInstance("AndroidCAStore");
-            if (ks == null)
+            if (ks == null) {
                 return false;
+            }
 
             ks.load(null, null);
             X509Certificate rootCACert = null;
@@ -51,8 +52,9 @@ public class CertificateUtil {
         final List<X509Certificate> rootCAList = new ArrayList<>();
         try {
             KeyStore ks = KeyStore.getInstance("AndroidCAStore");
-            if (ks == null)
+            if (ks == null) {
                 return null;
+            }
 
             ks.load(null, null);
             X509Certificate rootCACert = null;

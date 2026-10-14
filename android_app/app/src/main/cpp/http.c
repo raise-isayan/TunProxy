@@ -33,6 +33,7 @@ static const char http_503[] =
  */
 
 #include "tun2http.h"
+#include "http.h"
 #include "auth.h"
 
 int get_header(const char *header, const char *data, size_t data_len, char *value) {
@@ -100,7 +101,7 @@ uint8_t *find_data(uint8_t *data, size_t data_len, char *value) {
             data++;
             data_len--;
         }
-        if (strncasecmp(value, data, value_length) == 0) {
+        if (data_len >= (size_t) value_length && strncasecmp(value, (char *) data, value_length) == 0) {
             found = 1;
         } else {
             data++;
@@ -111,6 +112,42 @@ uint8_t *find_data(uint8_t *data, size_t data_len, char *value) {
         return data;
     }
 
+    return 0;
+}
+
+/*
+ * Finds a header field of the request header block (name is case-insensitive)
+ *
+ * Returns the field value with leading and trailing whitespace removed
+ * (*value_len updated) or 0 when not found
+ */
+static const uint8_t *find_header(const uint8_t *data, size_t data_len, const char *name,
+                                  size_t *value_len) {
+    size_t name_len = strlen(name);
+
+    // Skip the request line
+    size_t pos = 0;
+    while (pos < data_len && data[pos] != '\n') pos++;
+    pos++;
+
+    while (pos < data_len) {
+        size_t end = pos;
+        while (end < data_len && data[end] != '\n') end++;
+        size_t line_end = (end > pos && data[end - 1] == '\r') ? end - 1 : end;
+        if (line_end == pos) {
+            break; // end of headers
+        }
+        if (line_end - pos > name_len && data[pos + name_len] == ':' &&
+            strncasecmp((const char *) data + pos, name, name_len) == 0) {
+            size_t v = pos + name_len + 1;
+            while (v < line_end && (data[v] == ' ' || data[v] == '\t')) v++;
+            while (line_end > v && (data[line_end - 1] == ' ' || data[line_end - 1] == '\t'))
+                line_end--;
+            *value_len = line_end - v;
+            return data + v;
+        }
+        pos = end + 1;
+    }
     return 0;
 }
 
@@ -167,14 +204,11 @@ uint8_t *patch_http_url(uint8_t *data, size_t *data_len) {
     char hostname[512];
     size_t length = 0;
     if (!absolute) {
-        uint8_t *host = find_data(data, *data_len, "Host: ");
-        if (host) {
-            host += 6;
-            while (host < data + *data_len && *host != '\r' && length < sizeof(hostname) - 1) {
-                hostname[length] = *host;
-                host++;
-                length++;
-            }
+        size_t host_len = 0;
+        const uint8_t *host = find_header(data, *data_len, "Host", &host_len);
+        if (host && host_len > 0) {
+            length = host_len < sizeof(hostname) - 1 ? host_len : sizeof(hostname) - 1;
+            memcpy(hostname, host, length);
         } else {
             LOG("patch_http_url no host");
             return 0;
@@ -185,8 +219,9 @@ uint8_t *patch_http_url(uint8_t *data, size_t *data_len) {
     // Proxy-Authorization for the absolute request target
     char authorization[2048];
     int auth_len = 0;
+    size_t existing_len = 0;
     if (auth_enabled() && word_len < 32 &&
-        find_data(data, *data_len, "Proxy-Authorization:") == 0) {
+        find_header(data, *data_len, "Proxy-Authorization", &existing_len) == 0) {
         char method[32];
         char uri[4096];
         size_t target_len = pos2 - pos1;

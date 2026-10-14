@@ -50,6 +50,7 @@
         android:autofillHints="username"
         android:hint="@string/auth_username"
         android:inputType="text"
+        android:maxLength="250"
         android:visibility="gone" />
 
     <EditText
@@ -59,6 +60,7 @@
         android:autofillHints="password"
         android:hint="@string/auth_password"
         android:inputType="textPassword"
+        android:maxLength="250"
         android:visibility="gone" />
 
     <TextView

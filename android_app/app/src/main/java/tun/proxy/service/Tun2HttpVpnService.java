@@ -157,8 +157,8 @@ public class Tun2HttpVpnService extends VpnService {
         String vpn6 = prefs.getString("vpn6", "fd00:1:fd00:1:fd00:1:fd00:1");
         builder.addAddress(vpn6, 128);
 
-        builder.addRoute("0.0.0.0", 0);
-        builder.addRoute("0:0:0:0:0:0:0:0", 0);
+        builder.addRoute(getString(R.string.all_ip_ipv4), 0);
+        builder.addRoute(getString(R.string.all_ip_ipv6), 0);
 
         MyApplication app = (MyApplication) this.getApplication();
         assert app != null;

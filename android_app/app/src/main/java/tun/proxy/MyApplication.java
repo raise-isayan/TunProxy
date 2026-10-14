@@ -2,6 +2,7 @@ package tun.proxy;
 
 import android.app.Application;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 import androidx.preference.PreferenceManager;
 
@@ -41,7 +42,7 @@ public class MyApplication extends Application {
                 profiles.add(ProfileItem.fromJSONObject(array.getJSONObject(i)));
             }
         } catch (org.json.JSONException e) {
-            android.util.Log.e(TAG, "Error loading profiles", e);
+            Log.e(TAG, "Error loading profiles", e);
         }
         return profiles;
     }
@@ -55,7 +56,7 @@ public class MyApplication extends Application {
             }
             prefs.edit().putString(PREF_PROFILES, array.toString()).apply();
         } catch (org.json.JSONException e) {
-            android.util.Log.e(TAG, "Error storing profiles", e);
+            Log.e(TAG, "Error storing profiles", e);
         }
     }
 

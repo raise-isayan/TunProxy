@@ -56,15 +56,12 @@ public class HostPortPair {
         if (other == null) {
             return false;
         }
-
         if (!this.host.equals(other.host)) {
             return false;
         }
-
         if (this.port != other.port) {
             return false;
         }
-
         return true;
     }
 

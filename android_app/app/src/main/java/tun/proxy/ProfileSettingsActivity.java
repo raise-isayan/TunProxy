@@ -32,6 +32,7 @@ import java.util.Locale;
 import tun.utils.NetUtil;
 
 public class ProfileSettingsActivity extends AppCompatActivity {
+    private static final String TAG = "ProfileSettingsActivity";
 
     private ArrayAdapter<ProfileItem> adapter;
     private List<ProfileItem> profileList;

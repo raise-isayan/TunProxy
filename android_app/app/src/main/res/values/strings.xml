@@ -55,6 +55,9 @@
     <string name="proxy_auth_method">Authentication method</string>
 
     <!-- Proxy Setting -->
+    <string name="all_ip_ipv4">0.0.0.0</string>
+    <string name="all_ip_ipv6">0:0:0:0:0:0:0:0</string>
+
     <string name="proxy_setting">Proxy Setting</string>
     <string name="pref_connectivity_check">Connectivity Check</string>
     <string name="pref_connectivity_check_summary">Check proxy connectivity before starting</string>
