@@ -16,7 +16,7 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++17 -fvisibility=hidden "
-                abiFilters 'armeabi-v7a','arm64-v8a', 'x86'
+                abiFilters 'armeabi-v7a','arm64-v8a', 'x86', 'x86_64'
                 arguments "-DCMAKE_VERBOSE_MAKEFILE=1 -DANDROID_FUNCTION_LEVEL_LINKING=ON"
             }
         }

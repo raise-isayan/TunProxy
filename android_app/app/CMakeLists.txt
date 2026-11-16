@@ -30,6 +30,10 @@ find_library( # Sets the name of the path variable.
         # you want CMake to locate.
         log)
 
+# Support both 4 KB and 16 KB page-size Android devices with NDK r25.
+set_property(TARGET tun2http APPEND_STRING PROPERTY LINK_FLAGS
+        " -Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384")
+
 target_link_libraries( # Specifies the target library.
         tun2http
         ${log-lib}
