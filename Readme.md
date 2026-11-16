@@ -191,6 +191,17 @@ Please refer to the following web site as a solution
 
  gradlew build
 
+To build a release APK specifically for an Android x86_64 emulator:
+
+```sh
+cd android_app
+bash ./gradlew :app:assembleRelease -Pandroid.injected.build.abi=x86_64 -Pandroid.injected.testOnly=false
+```
+
+The APK is generated at `app/build/intermediates/apk/release/TunProxy_v1.6.0.apk`
+and uses the release keystore configured in `gradle.properties`.
+The native library supports both 4 KB and 16 KB memory pages.
+
 ## Base application
 
 Most of the code was created based on the following applications for creating applications.
